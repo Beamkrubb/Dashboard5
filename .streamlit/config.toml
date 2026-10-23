@@ -6,3 +6,12 @@ backgroundColor = "#0F1330"
 secondaryBackgroundColor = "#181D45"
 textColor = "#FFFFFF"
 font = "sans serif"
+
+[server]
+address = "127.0.0.1"
+port = 8050
+
+[browser]
+serverAddress = "127.0.0.1"
+serverPort = 8050
+gatherUsageStats = false

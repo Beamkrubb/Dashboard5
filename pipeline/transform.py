@@ -31,6 +31,11 @@ METRIC_KEYWORDS: List[Tuple[str, str, str]] = [
     ("harvest_ratio", "harvest_ratio", "%"),
     ("อัตราการเก็บเกี่ยว", "harvest_ratio", "%"),
     ("damage", "area_damaged", "rai"),
+    # OAE attribute names (verified against real files 2026-10-23)
+    ("ผลผลิตต่อเนื้อที่เก็บเกี่ยว", "yield_harvested", "kg/rai"),
+    ("ผลผลิตต่อเนื้อที่เพาะปลูก", "yield_planted", "kg/rai"),
+    ("ผลผลิตต่อเนื้อที่ให้ผล", "yield_bearing", "kg/rai"),
+    ("ผลผลิตต่อเนื้อที่กรีด", "yield_tapped", "kg/rai"),
     ("ผลผลิตต่อไร่", "yield", "kg/rai"),
     ("yield", "yield", "kg/rai"),
     ("เนื้อที่เพาะปลูก", "area_plant", "rai"),
@@ -169,7 +174,26 @@ def tidy_production(raw: pd.DataFrame, crop: str, source_id: str = "D01", source
     year_col = _find_col(raw.columns, YEAR_HEADERS)
     df = add_province_code(raw, prov_col)
     rows = []
-    if year_col is not None:  # long: one row per province-year, one column per metric
+    attr_col = _find_col(raw.columns, ("attribute", "item", "รายการ"))
+    val_col = _find_col(raw.columns, ("values", "value", "data", "ค่า"))
+    label_col = _find_col(raw.columns, ("year_crop", "crop_year", "ปีเพาะปลูก"))
+    if year_col is not None and attr_col is not None and val_col is not None and attr_col != val_col:
+        # OAE "attribute/value" layout: one row per province-year-measure
+        ycol = df[year_col].map(parse_year)
+        mu = df[attr_col].map(metric_for)
+        if report is not None:
+            report.setdefault("unmapped_columns", set()).update(
+                f"attribute:{a}" for a, m in zip(df[attr_col], mu) if m is None and pd.notna(a))
+        label = df[label_col].astype(str) if label_col and label_col != year_col else None
+        out = pd.DataFrame({
+            "province_code": df["province_code"], "province_th": df["province_th"],
+            "year_ce": ycol.map(lambda t: t[0]),
+            "period": label.where(label.str.contains("/"), "annual") if label is not None else "annual",
+            "crop": crop, "metric": mu.map(lambda t: t[0] if t else None),
+            "value": to_number(df[val_col]), "unit": mu.map(lambda t: t[1] if t else None),
+        })
+        rows.append(out.dropna(subset=["metric"]))
+    elif year_col is not None:  # long: one row per province-year, one column per metric
         metric_cols = {c: metric_for(c) for c in raw.columns if c not in (prov_col, year_col)}
         ycol = df[year_col].map(parse_year)
         df["_year_ce"] = ycol.map(lambda t: t[0])
@@ -310,8 +334,26 @@ def tidy_weekly_prices(records: List[dict], crop: str, source_url: str, source_i
     date_col = next((cols[c] for c in cols if any(k in c for k in ("date", "week_start", "start", "วันที่"))), None)
     year_col = next((cols[c] for c in cols if c in ("year", "ปี")), None)
     week_col = next((cols[c] for c in cols if c in ("week", "week_no", "สัปดาห์")), None)
+    if price_col is None and "value" in cols:
+        price_col = cols["value"]
     if price_col is None:
         raise ValueError(f"no price field in {list(df.columns)}")
+    if "year_th" in cols and "month" in cols and "week" in cols:
+        y = df[cols["year_th"]].map(lambda v: parse_year(v)[0])
+        m = pd.to_numeric(df[cols["month"]], errors="coerce")
+        w = pd.to_numeric(df[cols["week"]], errors="coerce")
+        unit = df[cols["unit"]].astype(str) if "unit" in cols else pd.Series(["บาท/กก."] * len(df))
+        factor = unit.map(lambda u: 0.001 if "ตัน" in u else 1.0)
+        out = pd.DataFrame({
+            "province_code": "00", "province_th": "ทั้งประเทศ", "year_ce": y,
+            "period": [f"{a}-{int(b):02d}-W{int(c)}" if pd.notna(a) and pd.notna(b) and pd.notna(c) else None
+                       for a, b, c in zip(y, m, w)],
+            "crop": crop, "metric": "farmgate_price", "value": to_number(df[price_col]) * factor,
+            "unit": "THB/kg", "source_id": source_id, "source_url": source_url,
+        })
+        out = out.dropna(subset=["period", "value"])
+        out["year_ce"] = out["year_ce"].astype("Int64")
+        return out[TIDY_COLUMNS].sort_values("period").reset_index(drop=True)
     if date_col is not None:
         d = pd.to_datetime(df[date_col], errors="coerce")
         iso = d.dt.isocalendar()

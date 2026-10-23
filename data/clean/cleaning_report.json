@@ -1,0 +1,155 @@
+{
+ "outputs": {
+  "production.csv": 33726,
+  "farmgate_weekly.csv": 1658,
+  "suitability.csv": 1997,
+  "climate_monthly.csv": 924,
+  "rain_annual.csv": 77
+ },
+ "skipped": [],
+ "D01": {
+  "cassava_production_province.csv": {
+   "unmapped_columns": [],
+   "unmatched_provinces": []
+  },
+  "oil_palm_production_province.xlsx": {
+   "unmapped_columns": [],
+   "unmatched_provinces": []
+  },
+  "para_rubber_production_province.xlsx": {
+   "unmapped_columns": [],
+   "unmatched_provinces": []
+  },
+  "maize_totalcrop_product_province.csv": {
+   "unmapped_columns": [],
+   "unmatched_provinces": [
+    "ภาคใต้"
+   ]
+  }
+ },
+ "D02": {},
+ "D05": {
+  "areazoning_rice.csv": {
+   "unmatched_provinces": [
+    "กําแพงเพชร",
+    "ชับภูมิ",
+    "ลําปาง",
+    "ลําพูน",
+    "หนองบัวลําภู"
+   ]
+  },
+  "areazoning_cassava.csv": {
+   "unmatched_provinces": [
+    "กําแพงเพชร",
+    "ประจวบศีรีขันธ์",
+    "ลําปาง",
+    "ลําพูน",
+    "หนองบัวลําภู"
+   ]
+  },
+  "areazoning_maize.csv": {
+   "unmatched_provinces": [
+    "กําแพงเพชร",
+    "ชับภูมิ",
+    "ประจวบศีรีขันธ์",
+    "ลําปาง",
+    "ลําพูน",
+    "หนองบัวลําภู"
+   ]
+  },
+  "areazoning_sugarcane.csv": {
+   "unmatched_provinces": [
+    "กําแพงเพชร",
+    "ลําปาง",
+    "ลําพูน",
+    "หนองบัวลําภู"
+   ]
+  },
+  "areazoning_rubber.csv": {
+   "unmatched_provinces": [
+    " N  : ไม่เหมาะสม (ดินในที่ลุ่ม น้ำไม่เพียงพอ พื้นที่มีความลาดชันมากกว่า 35 เปอร์เซ็นต์ และกลุ่มชุดดินที่ 62)",
+    "S1 : ความเหมาะสมสูง (ดินดี น้ำดี พื้นที่มีความลาดชันไม่เกิน 12 เปอร์เซ็นต์)",
+    "S2 : ความเหมาะสมปานกลาง (ดินตี น้ำดีปานกลาง พื้นที่มีความลาดชัน 12-20 เปอร์เซ็นต์)",
+    "S2* : ความเหมาะสมปานกลางที่มีการยกระดับจาก 53r โดยมีเงื่อนไขของความลึกของดินในกลุ่มชุดตินที่ 45 46 48 49 และ 52 ซึ่งเป็นดินตื้นปนเศษหิน ก้อนกรวด รากสามารถหยั่งลึกลงในดินได้ // : ความเหมาะสมปานกลางที่มีการยกระดับจาก $30 โดยมีเงื่อนไขของเนื้อดินและการระบายน้ำของดินในกลุ่มชุดดินที่ 16 17 และ 18 ซึ่งมีเนื้อดินเป็นกลุ่มดินร่วน ดินทรายแป้ง การระบายน้ำค่อนข้างเลว หากมีการจัดการสามารถปลูกยางพาราได้",
+    "S3  : ความเหมาะเล็กน้อย (ดินตื้น น้ำน้อย พื้นที่มีความลาดชัน 20-35 เปอร์เซ็นด์)",
+    "กำเพงแพชร",
+    "ชับภูมิ",
+    "พทัลุง",
+    "หนองบัวลําภู",
+    "อํานาจเจริญ"
+   ]
+  },
+  "areazoning_plam.csv": {
+   "unmatched_provinces": [
+    "กําแพงเพชร",
+    "ภาคเหนือ",
+    "ลําปาง",
+    "ลําพูน",
+    "หนองบัวลําภู",
+    "อํานาจเจริญ"
+   ]
+  },
+  "areazoning_pineapple.csv": {
+   "unmatched_provinces": [
+    "ชับภูมิ",
+    "ภาคใต้",
+    "ลําปาง"
+   ]
+  },
+  "areazoning_longan.csv": {
+   "unmatched_provinces": [
+    "กําแพงเพชร",
+    "ชับภูมิ",
+    "ประจวบศีรีขันธ์",
+    "ลําปาง",
+    "ลําพูน",
+    "หนองบัวลําภู"
+   ]
+  },
+  "areazoning_rambutan.csv": {
+   "unmatched_provinces": [
+    "นครศีรธรมราช",
+    "ลําปาง",
+    "หนองบัวลําภู",
+    "อดุรธานี",
+    "อุดรรดิตถ์",
+    "อุบลลราชธานี"
+   ]
+  },
+  "areazoning_durian.csv": {
+   "unmatched_provinces": [
+    "กำเพงแพชร",
+    "ชับภูมิ",
+    "นครศรธีรรมราช",
+    "ลําปาง",
+    "หนองบัวลําภู"
+   ]
+  },
+  "areazoning_mangosteen.csv": {
+   "unmatched_provinces": [
+    "กำเพงแพชร",
+    "นครศรธีรรมราช"
+   ]
+  },
+  "areazoning_coconut.csv": {
+   "unmatched_provinces": [
+    "กําแพงเพชร",
+    "ชับภูมิ",
+    "ลําปาง",
+    "ลําพูน",
+    "หนองบัวลําภู"
+   ]
+  },
+  "areazoning_robusta.csv": {
+   "unmatched_provinces": []
+  },
+  "areazoning_arabica.csv": {
+   "unmatched_provinces": [
+    "กําแพงเพชร",
+    "ลําปาง",
+    "อุดรดิตถ์"
+   ]
+  }
+ },
+ "D07": {}
+}

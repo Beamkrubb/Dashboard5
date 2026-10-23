@@ -7,3 +7,4 @@ data/raw/
 data/cache/
 .DS_Store
 Thumbs.db
+run_log.txt

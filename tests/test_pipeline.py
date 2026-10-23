@@ -107,3 +107,21 @@ def test_weekly_prices():
     recs = [{"date": "2019-04-01", "price": "1.95"}, {"date": "2019-04-08", "price": "2.05"}]
     out = T.tidy_weekly_prices(recs, "cassava", "u")
     assert out.period.tolist() == ["2019-W14", "2019-W15"] and out.province_code.eq("00").all()
+
+
+# ---------------- real OAE / NABC layouts (seen in downloads 2026-10-23) ----------------
+def test_production_attribute_value_layout():
+    raw = pd.DataFrame({
+        "year": [2562, 2562, 2562], "year_crop": ["2561/62"] * 3, "province_name": ["นครราชสีมา"] * 3,
+        "commod": ["มันสำปะหลัง"] * 3, "attribute": ["ผลผลิต", "ผลผลิตต่อเนื้อที่เก็บเกี่ยว", "เนื้อที่เก็บเกี่ยว"],
+        "values": ["6000000", "3158", "1900000"], "unit": ["ตัน", "กิโลกรัมต่อไร่", "ไร่"]})
+    out = T.tidy_production(raw, "cassava").set_index("metric")
+    assert out.loc["production", "value"] == 6_000_000 and out.loc["production", "year_ce"] == 2019
+    assert out.loc["yield_harvested", "unit"] == "kg/rai" and out.loc["area_harvest", "value"] == 1_900_000
+    assert out.loc["production", "period"] == "2561/62"
+
+
+def test_weekly_prices_nabc_layout():
+    recs = [{"year_th": 2562, "month": "10", "week": 3, "value": "16394.43", "unit": "บาท/ตัน"}]
+    out = T.tidy_weekly_prices(recs, "rice_hommali", "u")
+    assert out.period.iloc[0] == "2019-10-W3" and abs(out.value.iloc[0] - 16.39443) < 1e-9
