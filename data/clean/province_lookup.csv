@@ -1,0 +1,78 @@
+﻿pro_code,province_th,province_en,region_oae
+10,กรุงเทพมหานคร,Bangkok,กลาง
+11,สมุทรปราการ,Samut Prakan,กลาง
+12,นนทบุรี,Nonthaburi,กลาง
+13,ปทุมธานี,Pathum Thani,กลาง
+14,พระนครศรีอยุธยา,Phra Nakhon Si Ayutthaya,กลาง
+15,อ่างทอง,Ang Thong,กลาง
+16,ลพบุรี,Lop Buri,กลาง
+17,สิงห์บุรี,Sing Buri,กลาง
+18,ชัยนาท,Chai Nat,กลาง
+19,สระบุรี,Saraburi,กลาง
+20,ชลบุรี,Chon Buri,กลาง
+21,ระยอง,Rayong,กลาง
+22,จันทบุรี,Chanthaburi,กลาง
+23,ตราด,Trat,กลาง
+24,ฉะเชิงเทรา,Chachoengsao,กลาง
+25,ปราจีนบุรี,Prachin Buri,กลาง
+26,นครนายก,Nakhon Nayok,กลาง
+27,สระแก้ว,Sa Kaeo,กลาง
+30,นครราชสีมา,Nakhon Ratchasima,ตะวันออกเฉียงเหนือ
+31,บุรีรัมย์,Buri Ram,ตะวันออกเฉียงเหนือ
+32,สุรินทร์,Surin,ตะวันออกเฉียงเหนือ
+33,ศรีสะเกษ,Si Sa Ket,ตะวันออกเฉียงเหนือ
+34,อุบลราชธานี,Ubon Ratchathani,ตะวันออกเฉียงเหนือ
+35,ยโสธร,Yasothon,ตะวันออกเฉียงเหนือ
+36,ชัยภูมิ,Chaiyaphum,ตะวันออกเฉียงเหนือ
+37,อำนาจเจริญ,Amnat Charoen,ตะวันออกเฉียงเหนือ
+38,บึงกาฬ,Bueng Kan,ตะวันออกเฉียงเหนือ
+39,หนองบัวลำภู,Nong Bua Lam Phu,ตะวันออกเฉียงเหนือ
+40,ขอนแก่น,Khon Kaen,ตะวันออกเฉียงเหนือ
+41,อุดรธานี,Udon Thani,ตะวันออกเฉียงเหนือ
+42,เลย,Loei,ตะวันออกเฉียงเหนือ
+43,หนองคาย,Nong Khai,ตะวันออกเฉียงเหนือ
+44,มหาสารคาม,Maha Sarakham,ตะวันออกเฉียงเหนือ
+45,ร้อยเอ็ด,Roi Et,ตะวันออกเฉียงเหนือ
+46,กาฬสินธุ์,Kalasin,ตะวันออกเฉียงเหนือ
+47,สกลนคร,Sakon Nakhon,ตะวันออกเฉียงเหนือ
+48,นครพนม,Nakhon Phanom,ตะวันออกเฉียงเหนือ
+49,มุกดาหาร,Mukdahan,ตะวันออกเฉียงเหนือ
+50,เชียงใหม่,Chiang Mai,เหนือ
+51,ลำพูน,Lamphun,เหนือ
+52,ลำปาง,Lampang,เหนือ
+53,อุตรดิตถ์,Uttaradit,เหนือ
+54,แพร่,Phrae,เหนือ
+55,น่าน,Nan,เหนือ
+56,พะเยา,Phayao,เหนือ
+57,เชียงราย,Chiang Rai,เหนือ
+58,แม่ฮ่องสอน,Mae Hong Son,เหนือ
+60,นครสวรรค์,Nakhon Sawan,เหนือ
+61,อุทัยธานี,Uthai Thani,เหนือ
+62,กำแพงเพชร,Kamphaeng Phet,เหนือ
+63,ตาก,Tak,เหนือ
+64,สุโขทัย,Sukhothai,เหนือ
+65,พิษณุโลก,Phitsanulok,เหนือ
+66,พิจิตร,Phichit,เหนือ
+67,เพชรบูรณ์,Phetchabun,เหนือ
+70,ราชบุรี,Ratchaburi,กลาง
+71,กาญจนบุรี,Kanchanaburi,กลาง
+72,สุพรรณบุรี,Suphan Buri,กลาง
+73,นครปฐม,Nakhon Pathom,กลาง
+74,สมุทรสาคร,Samut Sakhon,กลาง
+75,สมุทรสงคราม,Samut Songkhram,กลาง
+76,เพชรบุรี,Phetchaburi,กลาง
+77,ประจวบคีรีขันธ์,Prachuap Khiri Khan,กลาง
+80,นครศรีธรรมราช,Nakhon Si Thammarat,ใต้
+81,กระบี่,Krabi,ใต้
+82,พังงา,Phangnga,ใต้
+83,ภูเก็ต,Phuket,ใต้
+84,สุราษฎร์ธานี,Surat Thani,ใต้
+85,ระนอง,Ranong,ใต้
+86,ชุมพร,Chumphon,ใต้
+90,สงขลา,Songkhla,ใต้
+91,สตูล,Satun,ใต้
+92,ตรัง,Trang,ใต้
+93,พัทลุง,Phatthalung,ใต้
+94,ปัตตานี,Pattani,ใต้
+95,ยะลา,Yala,ใต้
+96,นราธิวาส,Narathiwat,ใต้
