@@ -149,6 +149,7 @@ from src.visualizations import (
 )
 
 from src.filters import init_session_state, reset_filters, apply_ag_filters
+from src.theme import inject_theme_css, register_plotly_template
 
 
 # ---------------------------------------------------------
@@ -161,133 +162,9 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for modern agricultural-tech UI
-st.markdown("""
-<style>
-    @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
-    
-    html, body, [class*="css"] {
-        font-family: 'Sarabun', sans-serif;
-    }
-    
-    .main-header {
-        background: linear-gradient(135deg, #1B4D3E 0%, #2D6A4F 60%, #40916C 100%);
-        padding: 24px 30px;
-        border-radius: 14px;
-        color: white;
-        margin-bottom: 20px;
-        box-shadow: 0 4px 15px rgba(27, 77, 62, 0.12);
-    }
-    .main-header h1 {
-        margin: 0;
-        font-size: 26px;
-        font-weight: 700;
-        letter-spacing: -0.3px;
-        color: #FFFFFF;
-    }
-    .main-header p {
-        margin: 6px 0 0 0;
-        font-size: 14px;
-        color: #D8F3DC;
-        opacity: 0.95;
-    }
-
-    /* KPI Cards */
-    .kpi-card {
-        background: #FFFFFF;
-        border: 1px solid #E2E8F0;
-        border-radius: 12px;
-        padding: 16px 18px;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.03);
-        transition: transform 0.15s ease, box-shadow 0.15s ease;
-        height: 100%;
-    }
-    .kpi-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(27, 77, 62, 0.08);
-        border-color: #52B788;
-    }
-    .kpi-label {
-        font-size: 12px;
-        font-weight: 600;
-        color: #64748B;
-        text-transform: uppercase;
-        letter-spacing: 0.4px;
-        margin-bottom: 6px;
-    }
-    .kpi-value {
-        font-size: 23px;
-        font-weight: 700;
-        color: #1B4D3E;
-        line-height: 1.2;
-    }
-    .kpi-unit {
-        font-size: 13px;
-        font-weight: 400;
-        color: #94A3B8;
-        margin-left: 4px;
-    }
-    .kpi-sub {
-        font-size: 12px;
-        margin-top: 6px;
-        font-weight: 500;
-    }
-    .delta-badge-pos {
-        background-color: #ECFDF5;
-        color: #059669;
-        padding: 2px 8px;
-        border-radius: 6px;
-        font-weight: 600;
-        font-size: 11.5px;
-        display: inline-block;
-    }
-    .delta-badge-neg {
-        background-color: #FEF2F2;
-        color: #DC2626;
-        padding: 2px 8px;
-        border-radius: 6px;
-        font-weight: 600;
-        font-size: 11.5px;
-        display: inline-block;
-    }
-    .delta-badge-neutral {
-        background-color: #F1F5F9;
-        color: #64748B;
-        padding: 2px 8px;
-        border-radius: 6px;
-        font-weight: 500;
-        font-size: 11.5px;
-        display: inline-block;
-    }
-
-    /* Filter Bar Box */
-    .filter-box {
-        background: #FFFFFF;
-        border: 1px solid #E2E8F0;
-        border-radius: 12px;
-        padding: 14px 18px 8px 18px;
-        margin-bottom: 14px;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.02);
-    }
-    .advisory-card {
-        background: #FFFFFF;
-        border: 1px solid #E2E8F0;
-        border-radius: 10px;
-        padding: 14px 16px;
-        margin-bottom: 12px;
-        box-shadow: 0 1px 4px rgba(0,0,0,0.02);
-    }
-    .advisory-header {
-        font-size: 14px;
-        font-weight: 700;
-        color: #1B4D3E;
-        margin-bottom: 8px;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
-</style>
-""", unsafe_allow_html=True)
+# Neon Night theme (STYLE_HANDOFF.md): global CSS + Plotly template live in src/theme.py
+inject_theme_css()
+register_plotly_template()
 
 
 # ---------------------------------------------------------
@@ -594,13 +471,13 @@ with col_f6:
 # Active Filters Summary Badge
 sel_metric_title, sel_metric_unit = metric_labels[st.session_state.selected_metric]
 st.markdown(f"""
-<div style="background-color: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 8px; padding: 8px 14px; margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 12.5px; color: #166534;">
-    <span style="font-weight: 700;">🏷️ ตัวกรองที่ใช้งานอยู่:</span>
-    <span style="background: #FFFFFF; border: 1px solid #86EFAC; padding: 2px 8px; border-radius: 4px;">🌍 ภูมิภาค: <b>{st.session_state.selected_region}</b></span>
-    <span style="background: #FFFFFF; border: 1px solid #86EFAC; padding: 2px 8px; border-radius: 4px;">📍 จังหวัด: <b>{st.session_state.selected_province}</b></span>
-    <span style="background: #FFFFFF; border: 1px solid #86EFAC; padding: 2px 8px; border-radius: 4px;">🌱 ชนิดพืช: <b>{st.session_state.selected_product}</b></span>
-    <span style="background: #FFFFFF; border: 1px solid #86EFAC; padding: 2px 8px; border-radius: 4px;">📅 ปี พ.ศ.: <b>{st.session_state.selected_year}</b></span>
-    <span style="background: #FFFFFF; border: 1px solid #86EFAC; padding: 2px 8px; border-radius: 4px;">📊 ตัวชี้วัด: <b>{sel_metric_title}</b> ({sel_metric_unit})</span>
+<div class="filter-chips">
+    <span class="chip-label">🏷️ ตัวกรองที่ใช้งานอยู่:</span>
+    <span class="chip">🌍 ภูมิภาค: <b>{st.session_state.selected_region}</b></span>
+    <span class="chip">📍 จังหวัด: <b>{st.session_state.selected_province}</b></span>
+    <span class="chip">🌱 ชนิดพืช: <b>{st.session_state.selected_product}</b></span>
+    <span class="chip">📅 ปี พ.ศ.: <b>{st.session_state.selected_year}</b></span>
+    <span class="chip">📊 ตัวชี้วัด: <b>{sel_metric_title}</b> ({sel_metric_unit})</span>
 </div>
 """, unsafe_allow_html=True)
 
@@ -672,7 +549,7 @@ with tab1:
         # Comparison Year Selector (Requirement 1.3: Clearly separate analysis year from comparison year)
         col_an_yr, col_cmp_yr = st.columns([2.5, 1.5])
         with col_an_yr:
-            st.markdown(f"**ปีที่ใช้วิเคราะห์หลัก:** <span style='font-size: 16px; font-weight: 700; color: #1B4D3E;'>พ.ศ. {st.session_state.selected_year}</span>", unsafe_allow_html=True)
+            st.markdown(f"**ปีที่ใช้วิเคราะห์หลัก:** <span class='accent-text'>พ.ศ. {st.session_state.selected_year}</span>", unsafe_allow_html=True)
         with col_cmp_yr:
             default_prev_yr = st.session_state.selected_year - 1
             comp_choices = [f"ปีก่อนหน้า (พ.ศ. {default_prev_yr})"] + [f"ปี พ.ศ. {y}" for y in sorted(available_years, reverse=True) if y != st.session_state.selected_year]
@@ -723,7 +600,7 @@ with tab1:
 
         with col_kpi1:
             st.markdown(f"""
-            <div class="kpi-card">
+            <div class="kpi-card kpi-magenta">
                 <div class="kpi-label">🌾 เนื้อที่เพาะปลูก (Planted Area)</div>
                 <div class="kpi-value">{kpis['total_plant_rai']:,.0f}<span class="kpi-unit">ไร่</span></div>
                 <div class="kpi-sub">{badge_plant}</div>
@@ -732,7 +609,7 @@ with tab1:
 
         with col_kpi2:
             st.markdown(f"""
-            <div class="kpi-card">
+            <div class="kpi-card kpi-cyan">
                 <div class="kpi-label">🚜 เนื้อที่เก็บเกี่ยว (Harvested Area)</div>
                 <div class="kpi-value">{kpis['total_harvest_rai']:,.0f}<span class="kpi-unit">ไร่</span></div>
                 <div class="kpi-sub">{badge_harvest}</div>
@@ -741,7 +618,7 @@ with tab1:
 
         with col_kpi3:
             st.markdown(f"""
-            <div class="kpi-card">
+            <div class="kpi-card kpi-magenta">
                 <div class="kpi-label">📦 ปริมาณผลผลิตรวม (Production)</div>
                 <div class="kpi-value">{kpis['total_production_ton']:,.0f}<span class="kpi-unit">ตัน</span></div>
                 <div class="kpi-sub">{badge_prod}</div>
@@ -751,7 +628,7 @@ with tab1:
         with col_kpi4:
             yield_str = f"{kpis['weighted_yield_kg_rai']:,.1f}" if not np.isnan(kpis['weighted_yield_kg_rai']) else "N/A"
             st.markdown(f"""
-            <div class="kpi-card">
+            <div class="kpi-card kpi-cyan">
                 <div class="kpi-label">⚖️ ผลผลิตต่อไร่ (Weighted Yield)</div>
                 <div class="kpi-value">{yield_str}<span class="kpi-unit">กก./ไร่</span></div>
                 <div class="kpi-sub">{badge_yield}</div>
@@ -851,9 +728,9 @@ with tab1:
 
         # Scale vs Yield Productivity Insight Callout
         st.markdown("""
-        <div style="background-color: #FEF3C7; border-left: 4px solid #D97706; padding: 14px 18px; border-radius: 6px; margin: 10px 0 20px 0;">
-            <span style="font-weight: 600; color: #92400E; font-size: 14px;">💡 ข้อสังเกตสำคัญด้านผลิตภาพและการใช้ที่ดิน (Scale vs Efficiency):</span><br>
-            <span style="font-size: 13px; color: #78350F; line-height: 1.6;">
+        <div class="callout callout-warning">
+            <span class="callout-title">💡 ข้อสังเกตสำคัญด้านผลิตภาพและการใช้ที่ดิน (Scale vs Efficiency):</span><br>
+            <span class="callout-body">
                 จังหวัดที่มี <b>ผลผลิตรวมสูงสุด (Total Production)</b> มักเป็นจังหวัดที่มีเนื้อที่เพาะปลูกขนาดใหญ่ แต่ไม่ได้แปลว่ามีประสิทธิภาพหรือ <b>ผลผลิตต่อไร่ (Yield per Rai)</b> สูงสุดเสมอไป ในทางกลับกัน จังหวัดที่มีพื้นที่เพาะปลูกขนาดกลางหรือเล็กอาจมีผลผลิตต่อไร่สูงกว่าเนื่องจากระบบชลประทานและความอุดมสมบูรณ์ของดิน การวิเคราะห์เปรียบเทียบทั้ง <b>ขนาดการผลิต (Scale)</b> และ <b>ประสิทธิภาพการผลิต (Yield Efficiency)</b> ควบคู่กันจึงทำให้เห็นภาพความเป็นจริงอย่างรอบด้าน
             </span>
         </div>
@@ -993,7 +870,7 @@ with tab2:
             st.info("ไม่พบไฟล์แผนที่ GeoJSON")
 
         st.markdown("""
-        <div style="font-size: 12px; color: #64748B; background: #F8FAFC; border: 1px solid #E2E8F0; padding: 10px 12px; border-radius: 8px;">
+        <div class="callout callout-note small">
             📌 <b>ข้อมูลชั้นแผนที่:</b> สสน. HII ฝนเชิงพื้นที่ IDW (มม.), TMD Agromet รายวัน, ปภ. และ กรมส่งเสริมการเกษตร | ข้อมูลแสดงระดับจังหวัดตามข้อเท็จจริงของระบบเปิดภาครัฐ มิได้จำลองระดับแปลง
         </div>
         """, unsafe_allow_html=True)
@@ -1014,11 +891,11 @@ with tab2:
                 w_val = f"{stn_row.get('wind_speed_kmh', 0.0):.1f} กม./ชม." if pd.notna(stn_row.get('wind_speed_kmh')) else "0.0"
 
                 st.markdown(f"""
-                <div style="background-color: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 10px; padding: 12px 16px; margin-bottom: 14px;">
-                    <div style="font-weight: 700; color: #166534; font-size: 13.5px; margin-bottom: 6px;">
+                <div class="callout callout-success">
+                    <div class="callout-title">
                         📡 สถานีตรวจอากาศการเกษตร TMD: <b>{stn_name}</b> ({stn_row.get('province', 'ประเทศไทย')})
                     </div>
-                    <div style="display: flex; flex-wrap: wrap; gap: 16px; font-size: 13px; color: #1E3A8A;">
+                    <div class="callout-row">
                         <span>🌡️ อุณหภูมิ: <b>{t_val}</b></span>
                         <span>💧 ความชื้นสัมพัทธ์: <b>{rh_val}</b></span>
                         <span>🌧️ ฝน 24 ชม.: <b>{r24_val}</b></span>
@@ -1034,10 +911,10 @@ with tab2:
             c_d = risk_status["drought"]["color"]
             b_class = "delta-badge-neg" if c_d == "red" else ("delta-badge-pos" if c_d == "green" else "delta-badge-neutral")
             st.markdown(f"""
-            <div class="kpi-card" style="padding: 10px 14px;">
+            <div class="kpi-card kpi-compact">
                 <div class="kpi-label">ภาวะภัยแล้ง / ฝนทิ้งช่วง</div>
-                <div style="font-weight: 700; font-size: 14px;"><span class="{b_class}">{risk_status['drought']['level']}</span></div>
-                <div style="font-size: 11px; color: #64748B; margin-top: 4px;">{risk_status['drought']['desc']}</div>
+                <div class="kpi-status"><span class="{b_class}">{risk_status['drought']['level']}</span></div>
+                <div class="kpi-desc">{risk_status['drought']['desc']}</div>
             </div>
             """, unsafe_allow_html=True)
 
@@ -1045,10 +922,10 @@ with tab2:
             c_f = risk_status["flood"]["color"]
             b_class = "delta-badge-neg" if c_f == "red" else ("delta-badge-pos" if c_f == "green" else "delta-badge-neutral")
             st.markdown(f"""
-            <div class="kpi-card" style="padding: 10px 14px;">
+            <div class="kpi-card kpi-compact">
                 <div class="kpi-label">ความเสี่ยงอุทกภัย / น้ำท่วม</div>
-                <div style="font-weight: 700; font-size: 14px;"><span class="{b_class}">{risk_status['flood']['level']}</span></div>
-                <div style="font-size: 11px; color: #64748B; margin-top: 4px;">{risk_status['flood']['desc']}</div>
+                <div class="kpi-status"><span class="{b_class}">{risk_status['flood']['level']}</span></div>
+                <div class="kpi-desc">{risk_status['flood']['desc']}</div>
             </div>
             """, unsafe_allow_html=True)
 
@@ -1056,10 +933,10 @@ with tab2:
             c_h = risk_status["heat"]["color"]
             b_class = "delta-badge-neg" if c_h == "red" else ("delta-badge-pos" if c_h == "green" else "delta-badge-neutral")
             st.markdown(f"""
-            <div class="kpi-card" style="padding: 10px 14px;">
+            <div class="kpi-card kpi-compact">
                 <div class="kpi-label">ความเครียดความร้อน (Heat)</div>
-                <div style="font-weight: 700; font-size: 14px;"><span class="{b_class}">{risk_status['heat']['level']}</span></div>
-                <div style="font-size: 11px; color: #64748B; margin-top: 4px;">{risk_status['heat']['desc']}</div>
+                <div class="kpi-status"><span class="{b_class}">{risk_status['heat']['level']}</span></div>
+                <div class="kpi-desc">{risk_status['heat']['desc']}</div>
             </div>
             """, unsafe_allow_html=True)
 
@@ -1098,14 +975,14 @@ with tab2:
 
         # 4. Planting Window Guide
         st.markdown(f"""
-        <div style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 12px 16px; margin-top: 10px;">
-            <div style="font-weight: 700; color: #1B4D3E; font-size: 13.5px;">🌱 คำแนะนำช่วงเวลาเพาะปลูกที่เหมาะสม: {active_crop}</div>
-            <div style="font-size: 13px; color: #334155; margin-top: 4px;">
+        <div class="callout callout-note">
+            <div class="callout-title">🌱 คำแนะนำช่วงเวลาเพาะปลูกที่เหมาะสม: {active_crop}</div>
+            <div class="callout-body">
                 - <b>ช่วงเวลาเพาะปลูกตามปฏิทินเกษตร:</b> {advisory_dict['planting_window']}<br>
                 - <b>ระยะเวลาเจริญเติบโต:</b> {advisory_dict['growth_duration_days']}<br>
                 - <b>ความต้องการน้ำและดิน:</b> {advisory_dict['water_soil_req']}<br>
                 - <b>หน่วยงานวิชาการต้นทาง:</b> {advisory_dict['source_agency']}<br>
-                <div style="font-size: 11.5px; color: #64748B; margin-top: 6px; font-style: italic;">
+                <div class="callout-foot">
                     {advisory_dict['disclaimer']}
                 </div>
             </div>
@@ -1158,9 +1035,9 @@ with tab2:
             st.markdown(interp_nat)
 
             st.markdown("""
-            <div style="background-color: #EFF6FF; border-left: 4px solid #3B82F6; padding: 12px 14px; border-radius: 6px; margin-top: 10px;">
-                <span style="font-weight: 600; font-size: 13px; color: #1E40AF;">💡 สหสัมพันธ์ (Correlation) ไม่เท่ากับ ความเป็นเหตุเป็นผล (Causation):</span><br>
-                <span style="font-size: 12.5px; color: #1E3A8A; line-height: 1.5;">
+            <div class="callout callout-info">
+                <span class="callout-title">💡 สหสัมพันธ์ (Correlation) ไม่เท่ากับ ความเป็นเหตุเป็นผล (Causation):</span><br>
+                <span class="callout-body">
                     ค่า $r$ สะท้อนทิศทางการเคลื่อนไหวร่วมกันเชิงสถิติเท่านั้น ไม่ได้พิสูจน์ว่าฝนเป็นสาเหตุเดียวของผลผลิตที่เปลี่ยนแปลง เนื่องจากผลผลิตทางการเกษตรยังขึ้นอยู่กับระบบชลประทาน ธาตุอาหารในดิน การป้องกันโรคแมลง และการปฏิบัติแปลงของเกษตรกร
                 </span>
             </div>
@@ -1176,9 +1053,9 @@ with tab2:
             st.plotly_chart(fig_season, use_container_width=True)
         with col_s2:
             st.markdown("""
-            <div style="background-color: #F8FAFC; border: 1px solid #E2E8F0; padding: 16px; border-radius: 8px;">
-                <span style="font-weight: 600; color: #1B4D3E;">🌾 ปัจจัยจังหวะเวลาของฝน (Rainfall Timing):</span><br>
-                <span style="font-size: 13px; color: #475569; line-height: 1.6;">
+            <div class="callout callout-note">
+                <span class="callout-title">🌾 ปัจจัยจังหวะเวลาของฝน (Rainfall Timing):</span><br>
+                <span class="callout-body">
                     การรวมปริมาณฝนทั้งปีอาจบดบังสภาวะแห้งแล้งจริง เนื่องจากพืชเศรษฐกิจต้องการน้ำในระยะวิกฤต เช่น ข้าวต้องการน้ำในระยะแตกกอและตั้งท้องออกรวง (มิ.ย.–ก.ย.) หากฝนตกหนักนอกฤดูเพาะปลูก (เช่น พ.ย.–ธ.ค.) อาจกลายเป็นอุทกภัยสร้างความเสียหายต่อการเก็บเกี่ยวแทนที่จะช่วยเพิ่มผลผลิต
                 </span>
             </div>
@@ -1278,7 +1155,7 @@ with tab3:
             st.info("ไม่พบไฟล์แผนที่ GeoJSON")
 
         st.markdown("""
-        <div style="background-color: #FFFBEB; border-left: 4px solid #F59E0B; padding: 12px 14px; border-radius: 6px; font-size: 12px; color: #92400E; line-height: 1.5;">
+        <div class="callout callout-warning small">
             📌 <b>หมายเหตุความโปร่งใสด้านระดับพื้นที่ของข้อมูลราคา:</b><br>
             ข้อมูลราคาหน้าฟาร์มที่ สศก./NABC สำรวจและเผยแพร่เป็น <b>ราคาเฉลี่ยระดับประเทศ (National Benchmark)</b> ในแต่ละสัปดาห์ 
             แดชบอร์ดนี้จึงแสดงแผนที่ฝั่งซ้ายเป็น <b>สัดส่วนและปริมาณผลผลิตเข้าสู่ตลาดรายจังหวัด</b> เพื่อชี้แหล่งอุปทานสำคัญ 
@@ -1343,7 +1220,7 @@ with tab3:
             col_p1, col_p2, col_p3, col_p4 = st.columns(4)
             with col_p1:
                 st.markdown(f"""
-                <div class="kpi-card" style="padding: 12px 14px;">
+                <div class="kpi-card kpi-compact kpi-magenta">
                     <div class="kpi-label">ราคาล่าสุด</div>
                     <div class="kpi-value">{latest_p_str}<span class="kpi-unit">{unit_str}</span></div>
                     <div class="kpi-sub"><span class="delta-badge-pos">ล่าสุด: {latest_period_str}</span></div>
@@ -1352,7 +1229,7 @@ with tab3:
 
             with col_p2:
                 st.markdown(f"""
-                <div class="kpi-card" style="padding: 12px 14px;">
+                <div class="kpi-card kpi-compact kpi-cyan">
                     <div class="kpi-label">ราคาเฉลี่ยรอบที่เลือก</div>
                     <div class="kpi-value">{mean_p_str}<span class="kpi-unit">{unit_str}</span></div>
                     <div class="kpi-sub"><span class="delta-badge-neutral">{selected_price_year_choice}</span></div>
@@ -1361,18 +1238,18 @@ with tab3:
 
             with col_p3:
                 st.markdown(f"""
-                <div class="kpi-card" style="padding: 12px 14px;">
+                <div class="kpi-card kpi-compact kpi-magenta">
                     <div class="kpi-label">ราคาสูงสุด-ต่ำสุด</div>
-                    <div class="kpi-value" style="font-size: 19px;">{max_p_str}<span class="kpi-unit">/ {min_p_str}</span></div>
+                    <div class="kpi-value kpi-value-sm">{max_p_str}<span class="kpi-unit">/ {min_p_str}</span></div>
                     <div class="kpi-sub"><span class="delta-badge-neutral">{unit_str}</span></div>
                 </div>
                 """, unsafe_allow_html=True)
 
             with col_p4:
                 st.markdown(f"""
-                <div class="kpi-card" style="padding: 12px 14px;">
+                <div class="kpi-card kpi-compact kpi-cyan">
                     <div class="kpi-label">การเปลี่ยนแปลงรายสัปดาห์</div>
-                    <div class="kpi-value" style="font-size: 19px;"><span class="{wow_badge}">{wow_str}</span></div>
+                    <div class="kpi-value kpi-value-sm"><span class="{wow_badge}">{wow_str}</span></div>
                     <div class="kpi-sub"><span class="delta-badge-neutral">เทียบสัปดาห์ก่อนหน้า</span></div>
                 </div>
                 """, unsafe_allow_html=True)
@@ -1442,9 +1319,9 @@ with tab3:
 
     # Price Outlook & Future Projection Disclaimer (Requirement B.Tab3)
     st.markdown("""
-    <div style="background-color: #FEF2F2; border-left: 4px solid #EF4444; padding: 12px 16px; border-radius: 6px; margin-top: 14px;">
-        <span style="font-weight: 700; color: #991B1B; font-size: 13px;">⚠️ ข้อพึงระวังเกี่ยวกับแนวโน้มราคาอนาคต (Price Outlook Disclaimer):</span><br>
-        <span style="font-size: 12.5px; color: #7F1D1D; line-height: 1.5;">
+    <div class="callout callout-danger">
+        <span class="callout-title">⚠️ ข้อพึงระวังเกี่ยวกับแนวโน้มราคาอนาคต (Price Outlook Disclaimer):</span><br>
+        <span class="callout-body">
             ราคาสินค้าเกษตรมีความผันผวนสูงตามจังหวะฤดูกาลเก็บเกี่ยว (Supply Shock) ปริมาณสต็อกโลก และสภาวะเศรษฐกิจมหภาค 
             การพยากรณ์ราคาอนาคตจำเป็นต้องอาศัยแบบจำลองเศรษฐมิติที่ผ่านการทดสอบย้อนหลัง (Backtesting) มิควรคาดเดาโดยไม่มีหลักฐาน 
             เกษตรกรควรติดตามราคาซื้อขายจริงแบบรายวันจากจุดรับซื้อในพื้นที่ และใช้สัญญาซื้อขายล่วงหน้าหรือการรวมกลุ่มเกษตรกรเพื่อกระจายความเสี่ยง
@@ -1501,7 +1378,7 @@ with tab4:
             st.info("ไม่พบไฟล์แผนที่ GeoJSON")
 
         st.markdown("""
-        <div style="font-size: 12px; color: #64748B; background: #F8FAFC; border: 1px solid #E2E8F0; padding: 10px 12px; border-radius: 8px;">
+        <div class="callout callout-note small">
             📌 <b>แหล่งข้อมูลปัจจัยการผลิต:</b> กรมชลประทาน (RID), กรมพัฒนาที่ดิน (Agri-Map), กรมส่งเสริมการเกษตร (DOAE), ปภ. และ สศก.
         </div>
         """, unsafe_allow_html=True)
@@ -1570,7 +1447,7 @@ with tab4:
             default_price_kg = float(price_sub["price_baht_per_kg"].mean()) if not price_sub.empty else 10.50
 
             st.markdown(f"""
-            <div style="background-color: #F8FAFC; border: 1px solid #E2E8F0; padding: 10px 14px; border-radius: 8px; margin-bottom: 14px; font-size: 12.5px;">
+            <div class="callout callout-note">
                 <b>📌 ค่าอ้างอิงเฉลี่ยภาครัฐ (สศก. สำหรับ {driver_crop}):</b> 
                 ต้นทุนเฉลี่ย: <b>{default_cost_rai:,.0f} บาท/ไร่</b> | 
                 ผลผลิตเฉลี่ย: <b>{default_yield_rai:,.0f} กก./ไร่</b> | 
@@ -1612,9 +1489,9 @@ with tab4:
                 st.info(f"🎯 **จุดคุ้มทุนด้านราคา (Break-even Price):** **{breakeven_price:,.2f} บาท/กก.** (หากขายได้ต่ำกว่านี้จะขาดทุน ณ ผลผลิต {in_yield:,.0f} กก./ไร่)")
 
             st.markdown("""
-            <div style="background-color: #FFFBEB; border: 1px solid #FCD34D; padding: 10px 14px; border-radius: 8px; margin-top: 10px;">
-                <span style="font-weight: 600; color: #B45309; font-size: 12px;">⚠️ ข้อจำกัดความรับผิดชอบ (Disclaimer):</span><br>
-                <span style="font-size: 11.5px; color: #92400E; line-height: 1.5;">
+            <div class="callout callout-warning small">
+                <span class="callout-title">⚠️ ข้อจำกัดความรับผิดชอบ (Disclaimer):</span><br>
+                <span class="callout-body">
                     ผลการคำนวณเป็นเพียงการประมาณการเบื้องต้นจากตัวเลขที่ผู้ใช้กำหนดขึ้น มิใช่การยืนยันผลประกอบการจริงจากระบบบัญชีฟาร์ม เกษตรกรควรพิจารณาความเสี่ยงด้านสภาพอากาศ ความผันผวนของราคาตลาด และคุณภาพผลผลิตจริงประกอบการตัดสินใจ
                 </span>
             </div>

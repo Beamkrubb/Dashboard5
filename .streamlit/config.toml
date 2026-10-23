@@ -1,0 +1,8 @@
+# Neon Night theme (STYLE_HANDOFF.md §3)
+[theme]
+base = "dark"
+primaryColor = "#E040FB"
+backgroundColor = "#0F1330"
+secondaryBackgroundColor = "#181D45"
+textColor = "#FFFFFF"
+font = "sans serif"
