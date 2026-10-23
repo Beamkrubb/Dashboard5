@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agri Data Handoff</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f6f5f1; --surface:#ffffff; --surface-2:#f0eee8; --ink:#1d1f1c; --ink-2:#55594f; --line:#dedbd2;
+  --accent:#2f6b3a; --accent-soft:#e3efe2;
+  --ok:#2f7a3e; --ok-bg:#e2f1e3; --part:#9a6a00; --part-bg:#fbf0d3; --sub:#2c5c99; --sub-bg:#e2ebf7; --bad:#a3352b; --bad-bg:#f7e2df;
+  --edit:#fff8d6;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#151714; --surface:#1d201c; --surface-2:#252923; --ink:#e9ebe4; --ink-2:#a7ad9f; --line:#353a32;
+    --accent:#7cc387; --accent-soft:#22331f;
+    --ok:#7fd08c; --ok-bg:#1f3322; --part:#e6b84a; --part-bg:#3a2f12; --sub:#8db6ee; --sub-bg:#1c2a3d; --bad:#f08a7e; --bad-bg:#3d1f1b;
+    --edit:#3a3618;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#151714; --surface:#1d201c; --surface-2:#252923; --ink:#e9ebe4; --ink-2:#a7ad9f; --line:#353a32;
+  --accent:#7cc387; --accent-soft:#22331f;
+  --ok:#7fd08c; --ok-bg:#1f3322; --part:#e6b84a; --part-bg:#3a2f12; --sub:#8db6ee; --sub-bg:#1c2a3d; --bad:#f08a7e; --bad-bg:#3d1f1b;
+  --edit:#3a3618;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans Thai",system-ui,sans-serif;font-size:15px;line-height:1.6}
+a{color:var(--sub);word-break:break-all}
+code,.mono{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.86em}
+.wrap{max-width:1080px;margin:0 auto;padding:24px 16px 80px}
+header.top{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;justify-content:space-between;border-bottom:2px solid var(--ink);padding-bottom:14px;margin-bottom:18px}
+h1{font-size:1.65rem;margin:0;line-height:1.25}
+.sub{color:var(--ink-2);margin:4px 0 0}
+.toolbar{position:sticky;top:0;z-index:5;background:var(--bg);display:flex;flex-wrap:wrap;gap:8px;padding:10px 0;border-bottom:1px solid var(--line);margin-bottom:18px}
+button,select{font:inherit;font-size:.9rem;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:6px;padding:6px 12px;cursor:pointer}
+button:hover{border-color:var(--ink-2)}
+button.primary{background:var(--accent);color:var(--bg);border-color:var(--accent)}
+button.ghost{background:transparent}
+button.danger{color:var(--bad)}
+.toggle{display:flex;align-items:center;gap:6px;font-size:.9rem;color:var(--ink-2)}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:6px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:20}
+.toast.show{opacity:1}
+section.block{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px 20px;margin-bottom:18px}
+section.block h2{font-size:1.1rem;margin:0 0 10px}
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:18px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.stat b{display:block;font-size:1.6rem;line-height:1.1}
+.stat span{color:var(--ink-2);font-size:.85rem}
+table.ov{width:100%;border-collapse:collapse;font-size:.88rem}
+table.ov th,table.ov td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+table.ov th{color:var(--ink-2);font-weight:600}
+.ovwrap{overflow-x:auto}
+.pill{display:inline-block;font-size:.78rem;font-weight:600;padding:1px 9px;border-radius:999px;white-space:nowrap}
+.s-ok{background:var(--ok-bg);color:var(--ok)} .s-partial{background:var(--part-bg);color:var(--part)} .s-substitute{background:var(--sub-bg);color:var(--sub)} .s-blocked{background:var(--bad-bg);color:var(--bad)}
+.card{background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--line);border-radius:10px;padding:16px 18px;margin-bottom:16px}
+.card.st-ok{border-left-color:var(--ok)} .card.st-partial{border-left-color:var(--part)} .card.st-substitute{border-left-color:var(--sub)} .card.st-blocked{border-left-color:var(--bad)}
+.card-head{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.card h3{margin:0;font-size:1.08rem}
+.idtag{font-family:"IBM Plex Mono",monospace;font-size:.8rem;color:var(--ink-2);margin-right:6px}
+.meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:4px 18px;margin:10px 0;font-size:.88rem}
+.meta div span{color:var(--ink-2)}
+.lbl{font-size:.8rem;font-weight:600;color:var(--ink-2);text-transform:uppercase;letter-spacing:.04em;margin:12px 0 4px}
+ul.links{list-style:none;padding:0;margin:0}
+ul.links li{padding:7px 0;border-top:1px dashed var(--line);display:flex;gap:8px;align-items:flex-start}
+ul.links li:first-child{border-top:0}
+ul.links .lk{flex:1;min-width:0}
+ul.links .lk .t{font-weight:500}
+ul.links .lk .n{color:var(--ink-2);font-size:.86rem}
+.x{border:0;background:transparent;color:var(--ink-2);padding:0 4px;font-size:1rem;display:none}
+.editing .x{display:inline}
+.addrow{display:none;margin-top:6px;font-size:.82rem;padding:3px 10px}
+.editing .addrow{display:inline-block}
+.notes{background:var(--surface-2);border-radius:6px;padding:8px 10px;font-size:.9rem;white-space:pre-wrap}
+.editing [contenteditable="true"]{background:var(--edit);outline:1px dashed var(--part);border-radius:3px;cursor:text}
+[contenteditable="true"]:focus{outline:2px solid var(--accent)}
+.card-tools{display:none;gap:6px}
+.editing .card-tools{display:flex}
+.st-select{display:none}
+.editing .st-select{display:inline-block}
+.editing .st-pill{display:none}
+pre.code{background:var(--surface-2);padding:10px 12px;border-radius:6px;overflow-x:auto;font-size:.82rem;margin:6px 0}
+.hint{font-size:.85rem;color:var(--ink-2)}
+@media (max-width:600px){h1{font-size:1.3rem} .card{padding:14px} section.block{padding:14px}}
+@media print{.toolbar,.toast{display:none} body{background:#fff}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <header class="top">
+    <div>
+      <h1 data-k="title">Handoff: แหล่งข้อมูลเปิดสำหรับ Dashboard เกษตรไทย</h1>
+      <p class="sub" data-k="subtitle">สรุปแหล่งข้อมูลจริง สถานะการเข้าถึง และแหล่งทดแทน สำหรับส่งต่อให้ AI/ผู้พัฒนารายถัดไป · ตรวจลิงก์เมื่อ 23 ต.ค. 2569 (2026-10-23)</p>
+    </div>
+    <div class="hint mono">repo: Beamkrubb/Dashboard5</div>
+  </header>
+
+  <div class="toolbar">
+    <label class="toggle"><input type="checkbox" id="editToggle"> โหมดแก้ไข</label>
+    <button id="btnAdd" class="ghost">+ เพิ่มชุดข้อมูล</button>
+    <button id="btnMd">คัดลอกเป็น Markdown (ส่งให้ AI)</button>
+    <button id="btnJson">ดาวน์โหลด JSON</button>
+    <button id="btnSave" class="primary">บันทึกเป็นไฟล์ HTML</button>
+    <button id="btnReset" class="ghost danger">ล้างการแก้ไขในเบราว์เซอร์</button>
+    <select id="themeSel" aria-label="theme"><option value="">ธีมตามระบบ</option><option value="light">สว่าง</option><option value="dark">มืด</option></select>
+  </div>
+
+  <div class="summary" id="summary"></div>
+
+  <section class="block">
+    <h2>ภารกิจสำหรับ AI ตัวถัดไป</h2>
+    <div class="notes" data-k="mission">เป้าหมาย: สร้าง interactive dashboard เกษตรรายจังหวัดของไทย (77 จังหวัด) ที่เชื่อมผลผลิต ราคา ต้นทุน ชลประทาน ความเหมาะสมของดิน ภัยพิบัติ และฝน เข้ากับแผนที่ขอบเขตจังหวัด
+
+ขั้นตอนที่แนะนำ:
+1) ดาวน์โหลดไฟล์จากลิงก์ "แหล่งหลัก" ของแต่ละชุด (ถ้าสถานะเป็น "ใช้แหล่งทดแทน" ให้ใช้รายการ "แหล่งทดแทน")
+2) แปลงทุกตารางเป็นรูปแบบ long/tidy ตามสคีมาด้านล่าง เก็บไว้ที่ data/clean/*.csv
+3) ทำตารางอ้างอิงจังหวัด (province_lookup.csv) จาก GeoJSON แล้ว join ทุกชุดด้วย pro_code
+4) สร้าง dashboard เป็นไฟล์ HTML เดียว (แผนที่ choropleth + กราฟแนวโน้ม + ตัวกรองปี/พืช/จังหวัด)
+5) อัปเดตช่อง "สถานะ" และ "หมายเหตุ" ในไฟล์นี้เมื่อพบปัญหาใหม่</div>
+  </section>
+
+  <section class="block">
+    <h2>ภาพรวมชุดข้อมูล</h2>
+    <div class="ovwrap"><table class="ov" id="overview"></table></div>
+  </section>
+
+  <div id="cards"></div>
+
+  <section class="block">
+    <h2>ข้อตกลงร่วมในการเตรียมข้อมูล</h2>
+    <div class="notes" data-k="conventions">• ปี: แหล่งไทยส่วนใหญ่ใช้ พ.ศ. → ค.ศ. = พ.ศ. − 543 (2550–2562 = 2007–2019). ข้อมูลพืชบางชนิดเป็น "ปีเพาะปลูก" (เช่น 2562/63) ให้เก็บทั้ง crop_year_label และ year_ce (ปีเริ่ม)
+• จังหวัด: ใช้ pro_code (รหัส 2 หลักตามกรมการปกครอง) เป็น key หลัก. ทำ mapping ชื่อไทย/อังกฤษ เพราะแต่ละแหล่งสะกดไม่เหมือนกัน (เช่น "กรุงเทพมหานคร" / "กรุงเทพฯ", "บึงกาฬ" ตั้งปี 2554 จึงไม่มีข้อมูลก่อนหน้า — ปี 2550–2553 จะมี 76 จังหวัด)
+• หน่วย: เนื้อที่ = ไร่ (1 ไร่ = 0.16 เฮกตาร์), ผลผลิต = ตัน, ผลผลิตต่อไร่ = กก./ไร่, ราคา = บาท/กก., ต้นทุน = บาท/ไร่ หรือ บาท/กก., ฝน = มม.
+• ไฟล์ CSV ภาษาไทยอาจเป็น UTF-8 (มี BOM) หรือ TIS-620/cp874 — ลองอ่านทั้งสองแบบ
+• metadata ใน catalog หลายชุดระบุ "ปีล่าสุด" ไม่ตรงกับไฟล์จริง — เชื่อข้อมูลในไฟล์ ไม่ใช่ metadata
+• เก็บ source_id และ source_url ทุกแถว เพื่อให้ dashboard แสดงที่มาได้</div>
+    <div class="lbl">สคีมากลางที่แนะนำ (long format)</div>
+    <pre class="code" data-k="schema">province_code,province_th,year_ce,period,crop,metric,value,unit,source_id,source_url
+30,นครราชสีมา,2019,annual,cassava,production,7012345,ton,D01,https://catalog.oae.go.th/dataset/dataoae1304
+30,นครราชสีมา,2019,2019-W14,cassava,farmgate_price,1.95,THB/kg,D02,...</pre>
+    <div class="hint">ตัวเลขในตัวอย่างเป็นค่าสมมุติเพื่อแสดงรูปแบบเท่านั้น</div>
+  </section>
+
+  <section class="block">
+    <h2>ข้อจำกัดที่พบระหว่างตรวจสอบ</h2>
+    <div class="notes" data-k="limits">• data.go.th: หน้า dataset ส่วนใหญ่แสดงลิงก์ดาวน์โหลดเป็น template ที่ยังไม่ render (${cur_meta...}) เมื่อดึงอัตโนมัติ และ API package_search ใช้ได้ไม่สม่ำเสมอ → เปิดผ่านเบราว์เซอร์แล้วกดดาวน์โหลดเอง
+• ชุดข้อมูลบน data.go.th จำนวนมากเป็นของ "สำนักงานจังหวัด" รายจังหวัด ไม่ใช่ระดับประเทศ — อย่านำมาต่อกันโดยไม่ตรวจความสอดคล้อง
+• catalog.oae.go.th บล็อกการดึงหน้าที่ 2+ ของหมวดและ API ด้วย robots.txt → ต้องเปิดด้วยเบราว์เซอร์เพื่อดูรายการครบ (หมวดผลผลิตมี 70 ชุด, ราคา 35 ชุด)
+• data.tmd.go.th บล็อกการดึงอัตโนมัติ และต้องลงทะเบียนเพื่อรับ uid/ukey
+• ระบบ disaster.doae.go.th ต้องล็อกอินด้วย ThaiD จึงไม่ใช่ open data โดยตรง</div>
+  </section>
+
+  <p class="hint">วิธีใช้: เปิด "โหมดแก้ไข" แล้วคลิกข้อความที่ไฮไลต์เพื่อแก้ · การแก้ไขจะจำไว้ในเบราว์เซอร์นี้ · กด "บันทึกเป็นไฟล์ HTML" เพื่อได้ไฟล์ใหม่ที่ฝังการแก้ไขไว้แล้ว (ส่งต่อได้ทันที)</p>
+</div>
+<div class="toast" id="toast"></div>
+
+<script type="application/json" id="seed">
+{
+"version": 1,
+"datasets": [
+{
+ "id":"D01","name":"สถิติการผลิตสินค้าเกษตรรายปี","owner":"สำนักงานเศรษฐกิจการเกษตร (สศก.)","format":"Excel / CSV","scope":"77 จังหวัด, 26 ชนิดพืช (2550–2562)",
+ "status":"ok",
+ "found":"OAE Catalog มีชุด 'ปริมาณการผลิต' รายพืช แยกระดับประเทศ/ภาค/จังหวัด ย้อนหลังยาว (เช่น มันสำปะหลัง 2523–2568, ข้าวโพด 2527–2567, ยาง 2531–2567, ปาล์ม 2525–2567) ครอบคลุมช่วง 2550–2562 ได้ หมวดผลผลิตมีทั้งหมด 70 ชุด",
+ "license":"เปิดเผย (ตรวจ license รายชุดใน catalog)",
+ "join":"ชื่อจังหวัด (ไทย) → map เป็น pro_code",
+ "primary":[
+  {"label":"OAE Catalog – หมวดปริมาณการผลิต (70 ชุด)","url":"https://catalog.oae.go.th/group/production","note":"เปิดในเบราว์เซอร์เพื่อดูหน้า 2–3"},
+  {"label":"มันสำปะหลังโรงงาน ระดับจังหวัด (CSV, 2523–2568)","url":"https://catalog.oae.go.th/dataset/5b3ab1a4-dc21-4d99-b476-709923203e0d/resource/13dbdafd-7a1f-421c-aff2-94f0b68d8a46/download/cassava_production_province-1.csv","note":"dataset: dataoae1304"},
+  {"label":"ข้าวโพดเลี้ยงสัตว์ ทั้งปี ระดับจังหวัด (CSV, 2527–2567)","url":"https://catalog.oae.go.th/dataset/a80e842d-1e48-4b32-bdc5-27df3e47dbff/resource/3dfb84c0-2443-4f07-84c8-cde942974c16/download/maize_totalcrop_product_province.csv","note":"dataset: dataoae1204 (มีแยกรุ่น 1/รุ่น 2 ด้วย)"},
+  {"label":"ยางพารา ระดับจังหวัด (XLSX, 2531–2567)","url":"https://catalog.oae.go.th/dataset/a0072a36-170d-4505-b8f1-de6d467c5f1b/resource/99f647d5-8944-4847-99ce-61ef210efa96/download/para_rubber_production_province.xlsx","note":"dataset: dataoae1404"},
+  {"label":"ปาล์มน้ำมัน ระดับจังหวัด (XLSX, 2525–2567)","url":"https://catalog.oae.go.th/dataset/c10379a2-791b-44ae-87a0-53355a99be1b/resource/65e0ccac-87ac-4a4d-9eb7-5611cccd78c6/download/oil_palm_production_province.xlsx","note":"dataset: dataoae1504"},
+  {"label":"ข้าว (นาปี/นาปรัง) – dataoae1104","url":"https://catalog.oae.go.th/dataset/dataoae1104","note":"CSV มีเฉพาะ 2563–2568 + PDF 2565–2568 → ช่วง 2550–2562 ต้องใช้แหล่งทดแทน"}
+ ],
+ "subs":[
+  {"label":"สถิติการเกษตรของประเทศไทย (หนังสือรายปี สศก.)","url":"https://prt.parliament.go.th/items/b6d507fb-a2b8-4a9b-803b-8019fa0fc1bf","note":"ตารางรายจังหวัดของข้าวย้อนหลัง (PDF ต้องสกัดตาราง)"},
+  {"label":"NSO Statistical Yearbook ตาราง 11.3 เนื้อที่ใช้ประโยชน์ทางการเกษตรรายจังหวัด","url":"https://www.nso.go.th/public/e-book/Statistical-Yearbook/SYB-2025_webPage/File%20SYB/2025/11/T%2011.3%202025.pdf","note":"แหล่งข้อมูลคือ สศก.; ปีอื่นเปลี่ยนเลขปีใน URL"}
+ ],
+ "notes":"ยังไม่ได้ยืนยันว่าครบ 26 ชนิดพืช — ต้องไล่ดูรายการทั้ง 70 ชุดในหมวดผลผลิต (ชุด *_product_month / *_plant_month เป็นร้อยละรายเดือน ไม่ใช่ผลผลิตรายปี). slug รูปแบบ dataoaeXX04 ใช้กับพืชหลัก. ระวัง metadata 'ปีล่าสุด 2565' ไม่ตรงกับไฟล์"
+},
+{
+ "id":"D02","name":"สถิติราคาหน้าไร่นารายสัปดาห์","owner":"สำนักงานเศรษฐกิจการเกษตร (สศก.)","format":"CSV","scope":"รายสัปดาห์ ครอบคลุมพืชเศรษฐกิจ (2561–2562)",
+ "status":"partial",
+ "found":"OAE Catalog หมวดราคามี 16 ชุด 'ราคาที่เกษตรกรขายได้รายสัปดาห์' (ข้าวเปลือก ข้าวโพด มันสำปะหลัง ยาง ปาล์ม มะพร้าว ลำไย สับปะรด พริกไทย และปศุสัตว์) แต่ resource เป็น JSON API ของ NABC ไม่ใช่ CSV และยังไม่ยืนยันว่ามีย้อนถึง 2561",
+ "license":"เปิดเผย",
+ "join":"ราคาระดับประเทศ (ไม่ใช่รายจังหวัด) → join ด้วย year/week + crop",
+ "primary":[
+  {"label":"OAE Catalog – หมวดราคา (35 ชุด)","url":"https://catalog.oae.go.th/group/price","note":"slug weekly_price_<crop>"},
+  {"label":"ตัวอย่าง: weekly_price_rice","url":"https://catalog.oae.go.th/dataset/weekly_price_rice","note":"3 resource: หอมมะลิ, ข้าวเจ้า, ข้าวเหนียว (ความชื้น 15%)"},
+  {"label":"NABC Agri API – weekly prices (JSON, แบ่งหน้า)","url":"https://agriapi.nabc.go.th/api/weekly-prices/product?product_name=ข้าวเปลือกเจ้าหอมมะลิ%20ความชื้น%2015&page=1","note":"วน page=1..N จนหมด แล้วแปลงเป็น CSV"}
+ ],
+ "subs":[
+  {"label":"ราคารายเดือน monthly_prices_<crop> (OAE)","url":"https://catalog.oae.go.th/dataset/monthly_prices_rice","note":"ใช้แทนถ้า API รายสัปดาห์ไม่มีปี 2561–2562"}
+ ],
+ "notes":"งานแรกที่ต้องทำ: เรียก API ดูว่ามีข้อมูลเริ่มปีใด และฟิลด์อะไรบ้าง. รายชื่อ weekly: rice, maize, cassava, rubber, oil-plam, coconut, longen, pineapples, black-pepper, beef, buffaloes, broiler-chicken, swine, egg, vannamei_shrimp, milk (สะกดตาม slug จริง). หมายเหตุ: คำอธิบายของ weekly_price_black-pepper ใน catalog เขียนเป็นมะพร้าว — ตรวจข้อมูลจริง"
+},
+{
+ "id":"D03","name":"สถิติต้นทุนการผลิตและเครื่องจักรกล","owner":"สำนักงานเศรษฐกิจการเกษตร (สศก.)","format":"CSV","scope":"พืชเศรษฐกิจหลัก (2561–2562)",
+ "status":"substitute",
+ "found":"ไม่พบชุดต้นทุนการผลิตระดับประเทศของ สศก. ในรูป CSV บน OAE Catalog (ค้นคำว่า 'ต้นทุน' พบเพียงต้นทุนโลจิสติกส์ข้าว/ยาง/ปาล์ม เป็น PDF). บน data.go.th มีแต่ชุดรายจังหวัดย่อย ๆ",
+ "license":"ตามแต่ละแหล่ง",
+ "join":"crop + year (ส่วนใหญ่เป็นระดับประเทศ)",
+ "primary":[
+  {"label":"ต้นทุนโลจิสติกส์ข้าว (OAE)","url":"https://catalog.oae.go.th/dataset/logis-rice","note":"PDF; มีชุด logis-rubber, logis-plam ด้วย"}
+ ],
+ "subs":[
+  {"label":"สำมะโนการเกษตร 2566 (สสช.) – XLSX","url":"https://catalog.nso.go.th/en/dataset/0506_11_0001","note":"ใช้ดูการถือครอง/การใช้เครื่องจักรกล (ตรวจว่ามีตารางเครื่องจักรรายจังหวัดหรือไม่)"},
+  {"label":"ตัวอย่างชุดต้นทุนรายจังหวัดบน data.go.th","url":"https://data.go.th/en/dataset/skn_doae_01003","note":"ต้นทุนข้าวเฉลี่ยต่อไร่ (จังหวัดเดียว) — ใช้ได้เฉพาะเป็นตัวอย่าง"},
+  {"label":"เว็บไซต์ สศก. (ตารางต้นทุนการผลิต)","url":"https://www.oae.go.th","note":"หน้าเว็บ render ด้วย JS ดึงอัตโนมัติไม่ได้ ต้องเปิดเบราว์เซอร์หาเมนู 'ต้นทุนการผลิตสินค้าเกษตร'"}
+ ],
+ "notes":"ทางเลือกสุดท้าย: กรอกต้นทุนต่อไร่ของพืชหลัก (ข้าวนาปี, ข้าวนาปรัง, มันสำปะหลัง, ข้าวโพดเลี้ยงสัตว์, อ้อย, ยาง, ปาล์ม) ปี 2561–2562 ด้วยมือจากเอกสาร สศก. แล้วบันทึกที่มาเป็นรายแถว. อย่าเดาตัวเลข"
+},
+{
+ "id":"D04","name":"สถิติพื้นที่ชลประทานรายจังหวัด","owner":"กรมชลประทาน & สศก.","format":"CSV","scope":"77 จังหวัด (2561–2562)",
+ "status":"substitute",
+ "found":"ไม่พบ CSV ระดับประเทศแยกรายจังหวัดจากกรมชลประทานบน open data portal ที่เปิดได้. data.go.th มีเฉพาะชุดของสำนักงานจังหวัดบางจังหวัด",
+ "license":"ตามแต่ละแหล่ง",
+ "join":"ชื่อจังหวัด → pro_code",
+ "primary":[
+  {"label":"รายงานสรุปผลงานประจำปี กรมชลประทาน (PDF)","url":"https://www.rid.go.th/_data/documents/rid_annual_conclusion/02_conclusion/2566/Booklet.pdf","note":"ปีอื่น: เปลี่ยน 2566 เป็น 2562/2564/2565 (ไฟล์ 2562 ชื่อ แผ่นพับ.pdf)"}
+ ],
+ "subs":[
+  {"label":"สถิติการเกษตรของประเทศไทย (สศก.) – ตารางเนื้อที่ชลประทานรายจังหวัด","url":"https://prt.parliament.go.th/items/b6d507fb-a2b8-4a9b-803b-8019fa0fc1bf","note":"PDF ต้องสกัดตาราง"},
+  {"label":"พื้นที่ทำเกษตรในเขตชลประทาน (data.go.th)","url":"https://data.go.th/en/dataset/dataset_10_078","note":"ระดับจังหวัดเดียว — ใช้ตรวจความสมเหตุสมผล"},
+  {"label":"พื้นที่แล้งซ้ำซาก (LDD) – สถิติรายตำบล CSV","url":"https://lddcatalog.ldd.go.th/dataset/f2ea827d-8b8b-4de6-9fa9-acc73dea1278/resource/b394ac5a-03be-4673-9a42-beafd3117e35/download/csv.csv","note":"ใช้พื้นที่ชลประทานเป็นปัจจัยวิเคราะห์ ใช้เป็นตัวชี้วัดความเสี่ยงน้ำแทนได้; CC BY-NC-ND"}
+ ],
+ "notes":"ต้องสกัดตารางจาก PDF (pdfplumber/camelot). ระบุชัดใน dashboard ว่าตัวเลขมาจากเอกสาร PDF"
+},
+{
+ "id":"D05","name":"ความเหมาะสมของดินตามระบบ Agri-Map","owner":"กรมพัฒนาที่ดิน (LDD)","format":"CSV","scope":"77 จังหวัด (S1, S2, S3, N)",
+ "status":"ok",
+ "found":"LDD Catalog ชุด 'เขตความเหมาะสมของที่ดินสำหรับการปลูกพืชเศรษฐกิจ (Zoning)' มี CSV สถิติรายจังหวัดแยก S1/S2/S3/N ครบ 13 พืช + Shapefile + data dictionary. อัปเดตล่าสุด 7 ต.ค. 2568",
+ "license":"CC BY-ND (ห้ามดัดแปลงเนื้อหาต้นฉบับ — แสดงผล/อ้างอิงได้)",
+ "join":"ชื่อจังหวัด → pro_code",
+ "primary":[
+  {"label":"หน้า dataset (LDD Catalog: lpd)","url":"https://lddcatalog.ldd.go.th/en/dataset/lpd","note":"13 พืช: ข้าว ข้าวโพด มันสำปะหลัง อ้อย สับปะรด ยาง ปาล์ม มะพร้าว กาแฟโรบัสตา/อาราบิกา ลำไย เงาะ มังคุด ทุเรียน"},
+  {"label":"ข้าว – สถิติรายจังหวัด (CSV)","url":"https://lddcatalog.ldd.go.th/dataset/ff8c5f01-853b-4165-88fe-d9691de2b400/resource/7f508d88-3c31-4cad-b95a-68ca0ce89356/download/areazoning_rice.csv","note":""},
+  {"label":"มันสำปะหลัง (CSV)","url":"https://lddcatalog.ldd.go.th/dataset/ff8c5f01-853b-4165-88fe-d9691de2b400/resource/7312af9d-8286-4527-85e1-c505c8bc75db/download/areazoning_cassava.csv","note":""},
+  {"label":"ข้าวโพด (CSV)","url":"https://lddcatalog.ldd.go.th/dataset/ff8c5f01-853b-4165-88fe-d9691de2b400/resource/08ddd54d-8fab-49b5-89d0-3f472149b5df/download/areazoning_maize.csv","note":""},
+  {"label":"อ้อย (CSV)","url":"https://lddcatalog.ldd.go.th/dataset/ff8c5f01-853b-4165-88fe-d9691de2b400/resource/49acd299-bc4a-482d-9fe4-b5d81c643758/download/areazoning_sugarcane.csv","note":""},
+  {"label":"ยางพารา (CSV)","url":"https://lddcatalog.ldd.go.th/dataset/ff8c5f01-853b-4165-88fe-d9691de2b400/resource/a1c2b391-30aa-4d23-a110-4e30c1bb7e28/download/areazoning_rubber.csv","note":""},
+  {"label":"ปาล์มน้ำมัน (CSV)","url":"https://lddcatalog.ldd.go.th/dataset/ff8c5f01-853b-4165-88fe-d9691de2b400/resource/ab6db1dc-648e-44f6-8ede-09c2bd5a02b8/download/areazoning_plam.csv","note":""},
+  {"label":"Data dictionary (CSV)","url":"https://lddcatalog.ldd.go.th/dataset/ff8c5f01-853b-4165-88fe-d9691de2b400/resource/626f7b83-dfd3-4d30-a2a7-aaa18fe00cd5/download/datadict_zoning.csv","note":"อ่านก่อนเพื่อรู้ชื่อคอลัมน์"}
+ ],
+ "subs":[
+  {"label":"Shapefile Zoning (ไฟล์ .rar)","url":"https://tswc.ldd.go.th/DownloadGIS/Index_Zoning.html","note":"ใช้เมื่อต้องการแผนที่ละเอียดระดับพื้นที่"}
+ ],
+ "notes":"ลิงก์ CSV พืชอื่น (สับปะรด ลำไย เงาะ ทุเรียน มังคุด มะพร้าว กาแฟ) อยู่ในหน้า dataset lpd. ข้อมูลเป็นภาพตัดขวาง (ไม่มีมิติปี)"
+},
+{
+ "id":"D06","name":"รายงานพื้นที่เกษตรประสบภัยพิบัติ","owner":"กรมส่งเสริมการเกษตร (DOAE) & ปภ.","format":"CSV","scope":"77 จังหวัด (2561–2562)",
+ "status":"substitute",
+ "found":"ระบบรายงานของ DOAE (disaster.doae.go.th) ต้องล็อกอิน ThaiD. ชุดบน data.go.th (disaster3) มีเพียงปี 2567. ปภ. มี catalog เปิดพร้อมสถิติอุทกภัย/ภัยแล้ง/วาตภัยรายปี 2562–2567 (XLSX/CSV) ที่มีหมวดความเสียหายด้านการเกษตร",
+ "license":"Open Data Common (ปภ.)",
+ "join":"ชื่อจังหวัด → pro_code",
+ "primary":[
+  {"label":"ปภ. – สถิติรายปีการเกิดอุทกภัย (dpm-gd027)","url":"https://catalog.disaster.go.th/en/dataset/dpm-gd027","note":"2562–2567; ไฟล์รวมที่ drive.disaster.go.th/index.php/s/kd55qos3To6D4Cx"},
+  {"label":"ปภ. – สถิติรายปีการเกิดภัยแล้ง (dpm-gd028)","url":"https://catalog.disaster.go.th/en/dataset/dpm-gd028","note":"2562–2568"},
+  {"label":"ปภ. – สถิติรายปีการเกิดวาตภัย (dpm-gd030)","url":"https://catalog.disaster.go.th/en/dataset/dpm-gd030","note":"หน่วยข้อมูลรายจังหวัด; ไฟล์ที่ drive.disaster.go.th/index.php/s/bbmZcMzMaXMozdB"}
+ ],
+ "subs":[
+  {"label":"DOAE – สรุปข้อมูลประสบภัยด้านพืชรายปี (data.go.th)","url":"https://data.go.th/en/dataset/disaster3","note":"ปี 2567 เท่านั้น"},
+  {"label":"ระบบช่วยเหลือเกษตรกรผู้ประสบภัย DOAE","url":"https://disaster.doae.go.th/report/index","note":"ต้องล็อกอิน — ไม่ใช่ open data"}
+ ],
+ "notes":"ช่วงที่ขอ (2561) ไม่มีในชุด ปภ. ที่เปิดได้ (เริ่ม 2562). ต้องเปิดไฟล์ดูว่ามีคอลัมน์ 'พื้นที่การเกษตรเสียหาย (ไร่)' รายจังหวัดหรือไม่"
+},
+{
+ "id":"D07","name":"ข้อมูลฝนเชิงพื้นที่รายจังหวัด (IDW)","owner":"สถาบันสารสนเทศทรัพยากรน้ำ (สสน. HII)","format":"CSV","scope":"77 จังหวัดรายเดือน (2561–2562)",
+ "status":"partial",
+ "found":"data.go.th ชุด 'ปริมาณฝนเชิงพื้นที่' ของ สสน. ตรงกับที่ต้องการ: ฝนเฉลี่ยรายเดือนรายจังหวัด คำนวณด้วย IDW จากสถานี TMD แต่ปีข้อมูลเริ่ม 2562 (ไม่มี 2561)",
+ "license":"CC BY-NC",
+ "join":"ชื่อจังหวัด → pro_code, year, month",
+ "primary":[
+  {"label":"ปริมาณฝนเชิงพื้นที่ (spatial-rain)","url":"https://data.go.th/en/dataset/spatial-rain","note":"2562–2568, CSV, อัปเดตรายเดือน; กดดาวน์โหลดผ่านเบราว์เซอร์"},
+  {"label":"อุณหภูมิสูงสุด/ต่ำสุดรายจังหวัดรายเดือน (tmax-tmin)","url":"https://data.go.th/en/dataset/tmax-tmin","note":"ชุดคู่กันจาก สสน. 2562–2569"}
+ ],
+ "subs":[
+  {"label":"Open-Meteo Historical API (ERA5) – สำหรับปี 2561","url":"https://archive-api.open-meteo.com/v1/archive?latitude=14.97&longitude=102.10&start_date=2018-01-01&end_date=2018-12-31&daily=precipitation_sum&timezone=Asia/Bangkok","note":"ใช้ centroid จังหวัดจาก GeoJSON, รวมรายวัน→รายเดือน; ระบุชัดว่าเป็น reanalysis ไม่ใช่ IDW"}
+ ],
+ "notes":"ถ้าใช้ Open-Meteo ต้องอ้างอิง Open-Meteo + ERA5 (Copernicus) และใช้แบบ non-commercial ฟรี. ค่าจาก reanalysis จะต่างจาก IDW ของ สสน. — อย่าผสมในกราฟเดียวโดยไม่ระบุ"
+},
+{
+ "id":"D08","name":"สถิติฝนสะสมเฉลี่ยประเทศระยะยาว","owner":"สถาบันสารสนเทศทรัพยากรน้ำ (สสน. HII)","format":"CSV","scope":"ภาพรวมประเทศ (1970–2025)",
+ "status":"substitute",
+ "found":"ไม่พบชุด CSV ฝนรายปีระดับประเทศระยะยาวของ สสน. ที่ดาวน์โหลดได้. รายงานประจำปี thaiwater.net ให้ค่าเป็นรายปี (เช่น ปี 2566 ฝนเฉลี่ย 1,408 มม. ต่ำกว่าค่าปกติ 95 มม. หรือ ~6%) แต่ไม่มีไฟล์อนุกรมเวลา",
+ "license":"ตามแหล่งทดแทน",
+ "join":"year",
+ "primary":[
+  {"label":"สถานการณ์น้ำประเทศไทย ปี 2566 (thaiwater.net)","url":"https://thaiwater.net/uploads/contents/current/YearlyReport2023/summary.html","note":"ใช้ตรวจเทียบค่าแต่ละปี; ปีอื่นเปลี่ยน YearlyReport20XX"}
+ ],
+ "subs":[
+  {"label":"World Bank CCKP – Thailand historical climate (CRU, 1901–ปัจจุบัน)","url":"https://climateknowledgeportal.worldbank.org/country/thailand/climate-data-historical","note":"ฝนรายปีระดับประเทศ ดาวน์โหลดผ่านหน้า Data Download"},
+  {"label":"Open-Meteo Historical API (ERA5, 1940–ปัจจุบัน)","url":"https://open-meteo.com/en/docs/historical-weather-api","note":"เฉลี่ยหลายจุดทั่วประเทศ (เช่น centroid 77 จังหวัด) เพื่อสร้างอนุกรม 1970–2025"}
+ ],
+ "notes":"แนะนำ CRU (CCKP) เป็นหลักเพราะมาจากสถานีและใช้กันแพร่หลาย; ระบุใน dashboard ว่าเป็นแหล่งทดแทน ไม่ใช่ตัวเลข สสน."
+},
+{
+ "id":"D09","name":"ข้อมูลตรวจวัดอุตุนิยมวิทยาเพื่อการเกษตร","owner":"กรมอุตุนิยมวิทยา (TMD)","format":"JSON API / Cache","scope":"34 สถานีตรวจวัดทั่วประเทศ",
+ "status":"partial",
+ "found":"TMD API มีบริการ Station, WeatherToday v2 (07:00 + สถิติ 24 ชม.), Weather3Hours v2 (~122–125 สถานี), ThailandClimateNormal (1981–2010), WeatherForecast7Days รายจังหวัด. ไม่พบ endpoint เฉพาะ agromet 34 สถานีในรายการ API. เว็บบล็อกการดึงอัตโนมัติ และขอให้ลงทะเบียนเพื่อรับ uid/ukey",
+ "license":"ต้องลงทะเบียนผู้ใช้ TMD",
+ "join":"station → พิกัด → จังหวัด (point-in-polygon กับ GeoJSON)",
+ "primary":[
+  {"label":"TMD API – รายการบริการ","url":"https://data.tmd.go.th/api/index1.php","note":"ลงทะเบียนเพื่อรับ uid/ukey; ใช้ Station + WeatherToday/V2"},
+  {"label":"คู่มือบริการข้อมูลผ่าน API (PDF)","url":"https://www.tmd.go.th/media/docinfo/info_บรการขอมลอตนยมวทยาและแผนดนไหวผาน-api.pdf","note":""}
+ ],
+ "subs":[
+  {"label":"Open-Meteo Historical API","url":"https://open-meteo.com/en/docs/historical-weather-api","note":"ใช้พิกัดสถานี TMD เพื่อดึงอุณหภูมิ ฝน ความชื้น ET0 ย้อนหลัง; ไม่ต้องใช้ key (non-commercial)"},
+  {"label":"อุณหภูมิสูงสุด/ต่ำสุดรายจังหวัด (สสน.)","url":"https://data.go.th/en/dataset/tmax-tmin","note":"รายเดือนรายจังหวัด"}
+ ],
+ "notes":"ถ้าต้องเก็บเป็น cache: ดึง API แล้วบันทึกเป็น data/cache/tmd_YYYYMMDD.json เพื่อไม่ให้ dashboard เรียก API ตรง (CORS/โควตา)"
+},
+{
+ "id":"D10","name":"ขอบเขตการปกครองรายจังหวัด","owner":"กรมการปกครอง / GISTDA","format":"GeoJSON","scope":"77 จังหวัด",
+ "status":"ok",
+ "found":"OpenGISData-Thailand (GitHub) มี provinces.geojson 77 จังหวัด คุณสมบัติ pro_code, pro_th, pro_en, reg_nesdb, reg_royin, perimeter, area_sqkm",
+ "license":"ไม่ระบุ license ใน README — ระบุที่มาเมื่อเผยแพร่",
+ "join":"pro_code (key หลักของทั้งโปรเจกต์)",
+ "primary":[
+  {"label":"provinces.geojson (raw)","url":"https://raw.githubusercontent.com/chingchai/OpenGISData-Thailand/master/provinces.geojson","note":"มี member 'crs' แบบเก่า — ลบออกหรือ reproject ให้เป็น WGS84 ตาม RFC 7946"},
+  {"label":"Repo OpenGISData-Thailand","url":"https://github.com/chingchai/OpenGISData-Thailand","note":"มีระดับอำเภอ/ตำบลด้วย"}
+ ],
+ "subs":[
+  {"label":"GeoThai data releases","url":"https://github.com/GeoThai/data/releases","note":"ทางเลือกอื่น"},
+  {"label":"thailand-geography-json","url":"https://github.com/thailand-geography-data/thailand-geography-json","note":"รายชื่อ/รหัสจังหวัด ใช้ทำตาราง lookup"}
+ ],
+ "notes":"ไฟล์ใหญ่ → simplify ด้วย mapshaper (เช่น 5–10%) ก่อนฝังลง dashboard"
+}
+]
+}
+</script>
+
+<script>
+(function(){
+  var STORE_KEY = 'agri-handoff-v1';
+  var STATUS = {
+    ok:{label:'ใช้ได้', cls:'s-ok'},
+    partial:{label:'ได้บางส่วน', cls:'s-partial'},
+    substitute:{label:'ใช้แหล่งทดแทน', cls:'s-substitute'},
+    blocked:{label:'เข้าถึงไม่ได้', cls:'s-blocked'}
+  };
+  var seed = JSON.parse(document.getElementById('seed').textContent);
+  var state = load() || {datasets: seed.datasets, text:{}};
+  var editing = false;
+
+  function load(){ try{ var s = localStorage.getItem(STORE_KEY); return s ? JSON.parse(s) : null; }catch(e){ return null; } }
+  function persist(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(state)); }catch(e){} }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function toast(m){ var t=document.getElementById('toast'); t.textContent=m; t.classList.add('show'); setTimeout(function(){t.classList.remove('show');},1800); }
+
+  // static editable text blocks
+  var textEls = document.querySelectorAll('[data-k]');
+  textEls.forEach(function(el){
+    var k = el.getAttribute('data-k');
+    if(state.text && state.text[k] != null) el.textContent = state.text[k];
+    el.addEventListener('input', function(){ state.text = state.text||{}; state.text[k] = el.textContent; persist(); });
+  });
+
+  function ed(path, val, tag, cls){
+    tag = tag||'span';
+    return '<'+tag+(cls?' class="'+cls+'"':'')+' data-path="'+path+'">'+esc(val)+'</'+tag+'>';
+  }
+  function linkList(d, i, key){
+    var arr = d[key]||[];
+    var h = '<ul class="links">';
+    arr.forEach(function(l, j){
+      var p = i+'.'+key+'.'+j;
+      h += '<li><div class="lk"><div class="t">'+ed(p+'.label', l.label)+'</div>'+
+        '<div><a href="'+esc(l.url)+'" target="_blank" rel="noopener">'+esc(l.url)+'</a></div>'+
+        '<div class="mono n url-edit" style="display:none">'+ed(p+'.url', l.url)+'</div>'+
+        '<div class="n">'+ed(p+'.note', l.note)+'</div></div>'+
+        '<button class="x" data-del="'+i+'.'+key+'.'+j+'" title="ลบลิงก์">✕</button></li>';
+    });
+    if(!arr.length) h += '<li class="n hint">— ไม่มี —</li>';
+    h += '</ul><button class="addrow" data-addlink="'+i+'.'+key+'">+ เพิ่มลิงก์</button>';
+    return h;
+  }
+
+  function render(){
+    var c = document.getElementById('cards'); var h='';
+    state.datasets.forEach(function(d,i){
+      var st = STATUS[d.status]||STATUS.partial;
+      var opts = Object.keys(STATUS).map(function(k){return '<option value="'+k+'"'+(k===d.status?' selected':'')+'>'+STATUS[k].label+'</option>';}).join('');
+      h += '<article class="card st-'+esc(d.status)+'" id="'+esc(d.id)+'">'+
+        '<div class="card-head"><h3><span class="idtag">'+ed(i+'.id', d.id)+'</span>'+ed(i+'.name', d.name)+'</h3>'+
+        '<div style="display:flex;gap:8px;align-items:center"><span class="pill st-pill '+st.cls+'">'+st.label+'</span>'+
+        '<select class="st-select" data-status="'+i+'">'+opts+'</select>'+
+        '<div class="card-tools"><button data-up="'+i+'" title="เลื่อนขึ้น">↑</button><button class="danger" data-rm="'+i+'">ลบ</button></div></div></div>'+
+        '<div class="meta">'+
+          '<div><span>เจ้าของข้อมูล: </span>'+ed(i+'.owner', d.owner)+'</div>'+
+          '<div><span>รูปแบบที่ต้องการ: </span>'+ed(i+'.format', d.format)+'</div>'+
+          '<div><span>ขอบเขตที่ต้องการ: </span>'+ed(i+'.scope', d.scope)+'</div>'+
+          '<div><span>License: </span>'+ed(i+'.license', d.license)+'</div>'+
+          '<div><span>Join key: </span>'+ed(i+'.join', d.join)+'</div>'+
+        '</div>'+
+        '<div class="lbl">สิ่งที่พบ</div>'+ed(i+'.found', d.found, 'div')+
+        '<div class="lbl">แหล่งหลัก</div>'+linkList(d,i,'primary')+
+        '<div class="lbl">แหล่งทดแทน / ใกล้เคียง</div>'+linkList(d,i,'subs')+
+        '<div class="lbl">หมายเหตุสำหรับ AI</div>'+ed(i+'.notes', d.notes, 'div', 'notes')+
+      '</article>';
+    });
+    c.innerHTML = h;
+    renderOverview(); renderSummary(); applyEdit();
+  }
+  function renderOverview(){
+    var h = '<thead><tr><th>ID</th><th>ชุดข้อมูล</th><th>เจ้าของ</th><th>สถานะ</th><th>แหล่งหลัก</th></tr></thead><tbody>';
+    state.datasets.forEach(function(d){
+      var st = STATUS[d.status]||STATUS.partial; var p=(d.primary&&d.primary[0])||null;
+      h += '<tr><td class="mono"><a href="#'+esc(d.id)+'">'+esc(d.id)+'</a></td><td>'+esc(d.name)+'</td><td>'+esc(d.owner)+'</td><td><span class="pill '+st.cls+'">'+st.label+'</span></td><td>'+(p?'<a href="'+esc(p.url)+'" target="_blank" rel="noopener">'+esc(p.label)+'</a>':'—')+'</td></tr>';
+    });
+    document.getElementById('overview').innerHTML = h+'</tbody>';
+  }
+  function renderSummary(){
+    var n={ok:0,partial:0,substitute:0,blocked:0};
+    state.datasets.forEach(function(d){ if(n[d.status]!=null) n[d.status]++; });
+    var h='<div class="stat"><b>'+state.datasets.length+'</b><span>ชุดข้อมูลทั้งหมด</span></div>';
+    Object.keys(STATUS).forEach(function(k){ h+='<div class="stat"><b style="color:var(--'+({ok:'ok',partial:'part',substitute:'sub',blocked:'bad'})[k]+')">'+n[k]+'</b><span>'+STATUS[k].label+'</span></div>'; });
+    document.getElementById('summary').innerHTML=h;
+  }
+  function setPath(path, val){
+    var parts = path.split('.'); var o = state.datasets;
+    for(var k=0;k<parts.length-1;k++){ o = o[isNaN(parts[k])?parts[k]:+parts[k]]; }
+    o[parts[parts.length-1]] = val;
+  }
+  function applyEdit(){
+    document.getElementById('app').classList.toggle('editing', editing);
+    document.querySelectorAll('[data-path],[data-k]').forEach(function(el){ el.setAttribute('contenteditable', editing?'true':'false'); });
+    document.querySelectorAll('.url-edit').forEach(function(el){ el.style.display = editing?'block':'none'; });
+  }
+
+  document.addEventListener('input', function(e){
+    var el = e.target.closest && e.target.closest('[data-path]');
+    if(el){ setPath(el.getAttribute('data-path'), el.textContent); persist(); }
+  });
+  document.addEventListener('focusout', function(e){
+    var el = e.target.closest && e.target.closest('[data-path]');
+    if(el){ var p=el.getAttribute('data-path'); if(/\.(url|name|id|owner)$/.test(p)){ renderOverview(); if(/\.url$/.test(p)) render(); } }
+  });
+  document.addEventListener('change', function(e){
+    var s = e.target.getAttribute && e.target.getAttribute('data-status');
+    if(s!=null){ state.datasets[+s].status = e.target.value; persist(); render(); }
+  });
+  document.addEventListener('click', function(e){
+    var t = e.target; var a;
+    if((a=t.getAttribute('data-del'))){ var p=a.split('.'); state.datasets[+p[0]][p[1]].splice(+p[2],1); persist(); render(); }
+    else if((a=t.getAttribute('data-addlink'))){ var q=a.split('.'); state.datasets[+q[0]][q[1]]=state.datasets[+q[0]][q[1]]||[]; state.datasets[+q[0]][q[1]].push({label:'ชื่อลิงก์ใหม่',url:'https://',note:''}); persist(); render(); }
+    else if((a=t.getAttribute('data-rm'))!=null && a!==''){ if(state.datasets[+a]){ state.datasets.splice(+a,1); persist(); render(); toast('ลบชุดข้อมูลแล้ว'); } }
+    else if((a=t.getAttribute('data-up'))!=null && a!==''){ var i=+a; if(i>0){ var tmp=state.datasets[i-1]; state.datasets[i-1]=state.datasets[i]; state.datasets[i]=tmp; persist(); render(); } }
+  });
+
+  document.getElementById('editToggle').addEventListener('change', function(e){ editing=e.target.checked; applyEdit(); });
+  document.getElementById('btnAdd').addEventListener('click', function(){
+    var n = state.datasets.length+1;
+    state.datasets.push({id:'D'+(n<10?'0':'')+n,name:'ชุดข้อมูลใหม่',owner:'',format:'',scope:'',status:'partial',found:'',license:'',join:'',primary:[],subs:[],notes:''});
+    persist(); editing=true; document.getElementById('editToggle').checked=true; render();
+    var last=document.querySelectorAll('.card'); last[last.length-1].scrollIntoView({behavior:'smooth'});
+  });
+
+  function toMarkdown(){
+    var T = function(k){ var el=document.querySelector('[data-k="'+k+'"]'); return el?el.textContent.trim():''; };
+    var md = '# '+T('title')+'\n\n'+T('subtitle')+'\n\n## ภารกิจ\n'+T('mission')+'\n\n## ชุดข้อมูล\n';
+    state.datasets.forEach(function(d){
+      md += '\n### '+d.id+' '+d.name+'  ['+(STATUS[d.status]||{}).label+']\n';
+      md += '- เจ้าของ: '+d.owner+'\n- รูปแบบ/ขอบเขตที่ต้องการ: '+d.format+' | '+d.scope+'\n- License: '+d.license+'\n- Join key: '+d.join+'\n- สิ่งที่พบ: '+d.found+'\n';
+      md += '- แหล่งหลัก:\n'; (d.primary||[]).forEach(function(l){ md+='  - ['+l.label+']('+l.url+')'+(l.note?' — '+l.note:'')+'\n'; });
+      md += '- แหล่งทดแทน:\n'; (d.subs||[]).forEach(function(l){ md+='  - ['+l.label+']('+l.url+')'+(l.note?' — '+l.note:'')+'\n'; });
+      if(d.notes) md += '- หมายเหตุ: '+d.notes+'\n';
+    });
+    md += '\n## ข้อตกลงร่วม\n'+T('conventions')+'\n\nสคีมา:\n```\n'+T('schema')+'\n```\n\n## ข้อจำกัด\n'+T('limits')+'\n';
+    return md;
+  }
+  function download(name, text, type){
+    var b = new Blob([text],{type:type}); var u = URL.createObjectURL(b);
+    var a = document.createElement('a'); a.href=u; a.download=name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function(){URL.revokeObjectURL(u);},1000);
+  }
+  document.getElementById('btnMd').addEventListener('click', function(){
+    var md = toMarkdown();
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(md).then(function(){toast('คัดลอก Markdown แล้ว');}, function(){download('handoff.md', md, 'text/markdown'); toast('ดาวน์โหลด handoff.md แทน');});
+    } else { download('handoff.md', md, 'text/markdown'); }
+  });
+  document.getElementById('btnJson').addEventListener('click', function(){
+    var out = {generated:new Date().toISOString(), text:{}, datasets:state.datasets};
+    textEls.forEach(function(el){ out.text[el.getAttribute('data-k')] = el.textContent; });
+    download('handoff_datasets.json', JSON.stringify(out,null,2), 'application/json');
+  });
+  document.getElementById('btnSave').addEventListener('click', function(){
+    var wasEditing = editing; editing=false; applyEdit();
+    var clone = document.documentElement.cloneNode(true);
+    clone.querySelector('#seed').textContent = '\n'+JSON.stringify({version:1,datasets:state.datasets},null,1).replace(/<\//g,'<\\/')+'\n';
+    clone.querySelector('#cards').innerHTML=''; clone.querySelector('#overview').innerHTML=''; clone.querySelector('#summary').innerHTML='';
+    clone.querySelector('#app').classList.remove('editing');
+    var et = clone.querySelector('#editToggle'); if(et) et.removeAttribute('checked');
+    download('data_sources_handoff.html', '<!doctype html>\n'+clone.outerHTML, 'text/html');
+    editing=wasEditing; applyEdit(); toast('บันทึกไฟล์แล้ว');
+  });
+  document.getElementById('btnReset').addEventListener('click', function(){
+    try{ localStorage.removeItem(STORE_KEY); }catch(e){}
+    location.reload();
+  });
+  var themeSel = document.getElementById('themeSel');
+  try{ var th = localStorage.getItem(STORE_KEY+'-theme'); if(th){ themeSel.value=th; document.documentElement.setAttribute('data-theme',th);} }catch(e){}
+  themeSel.addEventListener('change', function(){
+    if(themeSel.value) document.documentElement.setAttribute('data-theme', themeSel.value); else document.documentElement.removeAttribute('data-theme');
+    try{ localStorage.setItem(STORE_KEY+'-theme', themeSel.value); }catch(e){}
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
