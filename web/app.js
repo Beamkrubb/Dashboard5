@@ -15,13 +15,12 @@
     harvest: { label: 'เนื้อที่เก็บเกี่ยว', unit: 'ไร่', d: 0 },
     ratio: { label: 'อัตราการเก็บเกี่ยว', unit: '%', d: 1 },
   };
-  const BASIS = { 'planted/harvested': 'เพาะปลูก / เก็บเกี่ยว', 'standing/tapped': 'ยืนต้น / กรีดได้', 'standing/bearing': 'ยืนต้น / ให้ผล' };
-  const PRICE_FOR = { 'มันสำปะหลังโรงงาน': 'มันสำปะหลังสด คละ', 'ยางพารา': 'ยางแผ่นดิบ ชั้น 3', 'ปาล์มน้ำมัน': 'ผลปาล์มน้ำมันทั้งทะลาย คละ' };
+  const PRICE_FOR = { 'มันสำปะหลัง': 'มันสำปะหลังสด คละ', 'ยางพารา': 'ยางแผ่นดิบ ชั้น 3', 'ปาล์มน้ำมัน': 'ผลปาล์มน้ำมันทั้งทะลาย คละ',
+    'ข้าวนาปี': 'ข้าวเปลือกเจ้า ความชื้น 15%', 'ข้าวนาปรัง': 'ข้าวเปลือกเจ้า ความชื้น 15%' };
   const TREND_FROM = 2550, TREND_TO = 2562;
-  const years = [...new Set(D.ag.map(r => r[0]))].sort((a, b) => a - b);
-  const perYear = {}; D.ag.forEach(r => { (perYear[r[0]] = perYear[r[0]] || new Set()).add(r[1]); });
-  const S = { product: -1, year: years.includes(2562) ? 2562 : years[years.length - 1], region: ALL, province: -1, metric: 'prod', tab: 'overview',
-    rainView: 'total', disView: 'flood', sortKey: null, sortDir: -1 };
+  const years = [...new Set(D.ag.map(r => r[0]))].filter(y => y >= TREND_FROM && y <= TREND_TO).sort((a, b) => a - b);
+  const DEF = { product: Math.max(0, PROD.indexOf(D.shortcuts[0])), year: years.includes(2562) ? 2562 : years[years.length - 1], region: ALL, province: -1, metric: 'prod' };
+  const S = { ...DEF, tab: 'overview', rainView: 'total', disView: 'flood', fView: 'irr', sortKey: null, sortDir: -1 };
 
   // ---------- helpers ----------
   const $ = id => document.getElementById(id);
@@ -96,29 +95,59 @@
     while (i < idx.length) { let j = i; while (j + 1 < idx.length && idx[j + 1][0] === idx[i][0]) j++; const rk = (i + j) / 2 + 1; for (let k = i; k <= j; k++) out[idx[k][1]] = rk; i = j + 1; } return out; }
   function stats(xs, ys) { if (xs.length < 5) return null; const p = corr(xs, ys), s = corr(ranks(xs), ranks(ys)); return { n: xs.length, r: p.r, pr: p.p, rho: s.r, ps: s.p, slope: p.slope, icept: p.icept }; }
 
+
   // ---------- downloads capability (CSV) ----------
   let downloads = null;
   try { window.claude && window.claude.use && window.claude.use('downloads').then(d => { downloads = d; $('t-csv').hidden = !d; }).catch(() => {}); } catch (e) { /* no runtime */ }
 
   // ---------- global filters ----------
-  opts($('f-product'), [[-1, ALL + ' (' + PROD.length + ' ชนิด)'], ...PROD.map((p, i) => [i, p])], S.product);
-  opts($('f-year'), [...years].reverse().map(y => [y, y + (perYear[y].size < PROD.length ? ' (ข้อมูลบางพืช)' : '')]), S.year);
-  opts($('f-region'), [[ALL, ALL], ...D.regionNames.map(r => [r, r])], S.region);
+  const SHORT = D.shortcuts.map(n => PROD.indexOf(n)).filter(i => i >= 0);
+  const others = PROD.map((p, i) => i).filter(i => !SHORT.includes(i));
+  $('f-product').innerHTML = `<option value="-1">ทุกพืชรวมกัน (${PROD.length} ชนิด)</option><optgroup label="พืชหลัก (ทางลัด)">${SHORT.map(i => `<option value="${i}">${PROD[i]}</option>`).join('')}</optgroup>` +
+    `<optgroup label="พืชอื่น ๆ">${others.sort((a, b) => PROD[a].localeCompare(PROD[b], 'th')).map(i => `<option value="${i}">${PROD[i]}</option>`).join('')}</optgroup>`;
+  opts($('f-year'), [...years].reverse().map(y => [y, String(y)]), S.year);
+  opts($('f-region'), [[ALL, 'ทุกภูมิภาค'], ...D.regionNames.map(r => [r, r])], S.region);
   opts($('f-metric'), Object.entries(METRICS).map(([k, m]) => [k, `${m.label} (${m.unit})`]), S.metric);
   function provinceOptions() {
     const list = P.map((p, i) => [i, p]).filter(([i]) => S.region === ALL || R[i] === S.region).sort((a, b) => a[1].localeCompare(b[1], 'th'));
     if (S.province >= 0 && S.region !== ALL && R[S.province] !== S.region) S.province = -1;
-    opts($('f-province'), [[-1, ALL], ...list.map(([i, p]) => [i, `${p} (${CODE[i]})`])], S.province);
+    opts($('f-province'), [[-1, S.region === ALL ? 'ทุกจังหวัด (77)' : `ทุกจังหวัดใน${S.region} (${list.length})`], ...list.map(([i, p]) => [i, `${p} (${CODE[i]})`])], S.province);
   }
   provinceOptions();
-  $('f-product').onchange = e => { S.product = +e.target.value; syncCrops(); render(); };
-  $('f-year').onchange = e => { S.year = +e.target.value; render(); };
-  $('f-region').onchange = e => { S.region = e.target.value; provinceOptions(); render(); };
-  $('f-province').onchange = e => { S.province = +e.target.value; render(); };
-  $('f-metric').onchange = e => { S.metric = e.target.value; render(); };
+  function setFilter(k, v) {
+    S[k] = v;
+    if (k === 'region') provinceOptions();
+    if (k === 'province' && v >= 0 && S.region !== ALL && R[v] !== S.region) { S.region = ALL; provinceOptions(); }
+    if (k === 'product') syncCrops();
+    render();
+  }
+  $('f-product').onchange = e => setFilter('product', +e.target.value);
+  $('f-year').onchange = e => setFilter('year', +e.target.value);
+  $('f-region').onchange = e => setFilter('region', e.target.value);
+  $('f-province').onchange = e => setFilter('province', +e.target.value);
+  $('f-metric').onchange = e => setFilter('metric', e.target.value);
+  $('f-reset').onclick = () => { Object.assign(S, DEF); provinceOptions(); syncCrops(); render(); };
+  $('shortcuts').innerHTML = '<span class="lbl">ทางลัด:</span>' + SHORT.map(i => `<button class="sc" type="button" data-p="${i}" aria-pressed="false">${PROD[i]}</button>`).join('');
+  document.querySelectorAll('#shortcuts .sc').forEach(b => b.onclick = () => setFilter('product', S.product === +b.dataset.p ? -1 : +b.dataset.p));
+  function drawBadges() {
+    const items = [
+      ['region', 'ภูมิภาค', S.region === ALL ? 'ทุกภูมิภาค' : S.region],
+      ['province', 'จังหวัด', S.province < 0 ? 'ทุกจังหวัด' : `${P[S.province]} (${CODE[S.province]})`],
+      ['product', 'พืช', S.product < 0 ? 'ทุกพืชรวมกัน' : PROD[S.product]],
+      ['year', 'ปี', 'พ.ศ. ' + S.year],
+      ['metric', 'ตัวชี้วัด', METRICS[S.metric].label]];
+    const changed = items.filter(([k]) => S[k] !== DEF[k]).length;
+    $('badges').innerHTML = `<span class="lbl">ตัวกรองที่ใช้อยู่${changed ? ` (${changed} รายการเปลี่ยนจากค่าเริ่มต้น)` : ''}:</span>` + items.map(([k, l, v]) => S[k] === DEF[k]
+      ? `<span class="fb def"><b>${l}:</b> ${esc(v)}</span>`
+      : `<span class="fb"><b>${l}:</b> ${esc(v)}<button type="button" data-k="${k}" aria-label="ล้างตัวกรอง${l}">×</button></span>`).join('');
+    document.querySelectorAll('#badges button').forEach(b => b.onclick = () => setFilter(b.dataset.k, DEF[b.dataset.k]));
+    document.querySelectorAll('#shortcuts .sc').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.p === S.product)));
+  }
   $('coverage').textContent = `${PROD.length} พืช · ${new Set(D.ag.map(r => r[2])).size} จังหวัด · พ.ศ. ${years[0]}–${years[years.length - 1]}`;
-  const defaultCrop = () => S.product >= 0 ? S.product : Math.max(0, PROD.indexOf('มันสำปะหลังโรงงาน'));
-  function syncCrops() { ['c-crop', 'k-crop'].forEach(id => { $(id).value = String(defaultCrop()); }); kTouched = {}; }
+  const defaultCrop = () => S.product >= 0 ? S.product : 0;
+  function syncCrops() { $('k-crop').value = String(defaultCrop()); kTouched = {}; const pn = PRICE_FOR[PROD[defaultCrop()]]; if (pn && D.prices[pn]) $('m-product').value = pn; }
+  const scopeLabel = () => S.province >= 0 ? P[S.province] : S.region === ALL ? 'ทั้งประเทศ' : S.region;
+  const inScope = i => (S.region === ALL || R[i] === S.region) && (S.province < 0 || i === S.province);
 
   // ---------- tabs ----------
   const TABS = ['overview', 'climate', 'factors', 'economics'];
@@ -129,9 +158,28 @@
     render();
   }
   document.querySelectorAll('.tab').forEach(b => b.onclick = () => setTab(b.dataset.tab));
-  function seg(ids, key, val) { ids.forEach(([id, v]) => { $(id).onclick = () => { S[key] = v; ids.forEach(([i2, v2]) => $(i2).setAttribute('aria-pressed', String(v2 === v))); render(); }; }); }
-  seg([['rv-total', 'total'], ['rv-anom', 'anom']], 'rainView');
+  function seg(ids, key) { ids.forEach(([id, v]) => { $(id).onclick = () => { S[key] = v; ids.forEach(([i2, v2]) => $(i2).setAttribute('aria-pressed', String(v2 === v))); render(); }; }); }
+  seg([['rv-total', 'total'], ['rv-season', 'season'], ['rv-anom', 'anom'], ['rv-temp', 'temp']], 'rainView');
   seg([['dv-flood', 'flood'], ['dv-drought', 'drought']], 'disView');
+  seg([['fm-irr', 'irr'], ['fm-mech', 'mech'], ['fm-fert', 'fert']], 'fView');
+  const pf = p => p < 0.001 ? '< 0.001' : p.toFixed(3);
+  function statBox(el, st) {
+    el.innerHTML = !st ? '' : `<div><span>Pearson r</span><b>${st.r.toFixed(3)}</b></div><div><span>p-value (r)</span><b>${pf(st.pr)}</b></div>
+      <div><span>Spearman ρ</span><b>${st.rho.toFixed(3)}</b></div><div><span>p-value (ρ)</span><b>${pf(st.ps)}</b></div><div><span>N (จังหวัด)</span><b>${st.n}</b></div>
+      <div><span>นัยสำคัญที่ α = 0.05</span><b style="font-size:14px">r: ${st.pr < 0.05 ? 'มี' : 'ไม่มี'} · ρ: ${st.ps < 0.05 ? 'มี' : 'ไม่มี'}</b></div>`;
+  }
+  function scatterXY(el, pts, { xl, xu, yl = 'กก./ไร่', st, logx = false }) {
+    const xs = pts.map(d => d.x), x0 = Math.min(...xs), x1 = Math.max(...xs);
+    const sel = pts.filter(d => d.p === S.province);
+    Plotly.react(el, [
+      { x: xs, y: pts.map(d => d.y), text: pts.map(d => `${P[d.p]} (${CODE[d.p]})`), mode: 'markers',
+        marker: { size: 10, color: pts.map(d => S.region === ALL || R[d.p] === S.region ? C.cyan : 'rgba(124,130,173,0.45)'), opacity: 0.88, line: { color: '#fff', width: 0.5 } },
+        hovertemplate: '<b>%{text}</b><br>' + xl + ': %{x:,.1f} ' + xu + '<br>%{y:,.0f} ' + yl + '<extra></extra>' },
+      ...(st ? [{ x: [x0, x1], y: [st.slope * x0 + st.icept, st.slope * x1 + st.icept], mode: 'lines', line: { color: C.magenta, width: 2.5, dash: 'dash' }, hoverinfo: 'skip' }] : []),
+      ...(sel.length ? [{ x: sel.map(d => d.x), y: sel.map(d => d.y), mode: 'markers+text', text: sel.map(d => P[d.p]), textposition: 'top center', textfont: { color: '#fff' },
+        marker: { size: 15, color: C.magenta, line: { color: '#fff', width: 2 } }, hoverinfo: 'skip' }] : []),
+    ], layout({ xaxis: axis(`${xl} (${xu})`, logx ? { type: 'log' } : {}), yaxis: axis(yl) }), CFG);
+  }
 
   // =================== TAB 1 ===================
   let tableRows = [];
@@ -149,15 +197,14 @@
     const provs = byProvince(rowsFor({ year: S.year, province: -1 })), vals = {}; provs.forEach(d => vals[d.p] = d[S.metric]);
     const cropLabel = S.product < 0 ? 'ทุกพืชรวมกัน' : PROD[S.product];
     $('map1-title').textContent = `${m.label} พ.ศ. ${S.year}`;
-    $('map1-sub').textContent = `${cropLabel} · วางเมาส์เพื่อดูรหัสจังหวัดและค่า · สีเข้มสุด = ไม่มีข้อมูล`;
+    $('map1-sub').textContent = `${cropLabel} · ${S.region === ALL ? '77 จังหวัด' : S.region} · วางเมาส์เพื่อดูรหัสจังหวัดและค่า · สีเข้มสุด = ไม่มีข้อมูล`;
     const pv = {}; provs.forEach(d => pv[d.p] = d);
     choropleth($('map1'), vals, { unit: m.unit, label: m.label, highlight: S.province, regionOnly: S.region === ALL ? null : S.region,
       extraHover: i => pv[i] ? `<br>ผลผลิต ${short(pv[i].prod)} ตัน · ${fmt(pv[i].yield, 0)} กก./ไร่` : '' });
 
-    const series = years.filter(y => y >= TREND_FROM && y <= TREND_TO).map(y => ({ y, ...totals(rowsFor({ year: y })) })).filter(d => ok(d[S.metric]));
-    $('trend-title').textContent = `แนวโน้ม${m.label} พ.ศ. ${TREND_FROM}–${TREND_TO}`;
-    $('trend-sub').textContent = (S.province >= 0 ? P[S.province] : S.region === ALL ? 'ทั้งประเทศ' : S.region) + ' · ' + cropLabel +
-      (S.year < TREND_FROM || S.year > TREND_TO ? ` · ปี ${S.year} อยู่นอกช่วงกราฟ` : '');
+    const series = years.map(y => ({ y, ...totals(rowsFor({ year: y })) })).filter(d => ok(d[S.metric]));
+    $('trend-title').textContent = `แนวโน้ม${m.label} พ.ศ. ${years[0]}–${years[years.length - 1]}`;
+    $('trend-sub').textContent = scopeLabel() + ' · ' + cropLabel + ' · จุดสีชมพู = ปีที่เลือก';
     if (!series.length) empty($('trend'), 'ไม่มีข้อมูลในช่วง พ.ศ. 2550–2562'); else {
       const x = series.map(d => d.y), y = series.map(d => d[S.metric]), i = x.indexOf(S.year);
       Plotly.react($('trend'), [
@@ -168,21 +215,22 @@
       ], layout({ xaxis: axis('ปี พ.ศ.', { dtick: 2 }), yaxis: axis(m.unit) }), CFG);
     }
 
-    const inScope = provs.filter(d => (S.region === ALL || R[d.p] === S.region) && ok(d[S.metric]));
-    const sorted = [...inScope].sort((a, b) => b[S.metric] - a[S.metric]);
-    $('top-sub').textContent = `${cropLabel} · พ.ศ. ${S.year} · ${m.label}`;
+    const scope = provs.filter(d => (S.region === ALL || R[d.p] === S.region) && ok(d[S.metric]));
+    const sorted = [...scope].sort((a, b) => b[S.metric] - a[S.metric]);
+    $('top-sub').textContent = `${cropLabel} · พ.ศ. ${S.year} · ${m.label} · ${S.region === ALL ? 'ทั้งประเทศ' : S.region}`;
     const item = d => ({ name: P[d.p], code: CODE[d.p], v: d[S.metric], sel: d.p === S.province });
     hbar($('top10'), sorted.slice(0, 10).map(item), { unit: m.unit, scale: [[0, C.blue], [1, C.cyan]] });
     hbar($('bot10'), sorted.filter(d => d[S.metric] > 0).slice(-10).reverse().map(item), { unit: m.unit, scale: [[0, C.violet], [1, C.magenta]] });
 
-    // scale vs efficiency
-    const sc = inScope.filter(d => ok(d.plant) && ok(d.yield) && d.plant > 0);
-    $('scale-sub').textContent = `แต่ละจุด = 1 จังหวัด · ${cropLabel} · พ.ศ. ${S.year}`;
+    const sc = scope.filter(d => ok(d.plant) && ok(d.yield) && d.plant > 0);
+    $('scale-sub').textContent = `แต่ละจุด = 1 จังหวัด · ขนาดจุด = ผลผลิต · ${cropLabel} · พ.ศ. ${S.year}`;
     if (sc.length < 3) { empty($('scale'), 'ข้อมูลไม่พอ'); $('scale-insight').innerHTML = '<b>ข้อสังเกต:</b> ข้อมูลไม่พอสำหรับเปรียบเทียบ'; }
     else {
       const medA = [...sc].map(d => d.plant).sort((a, b) => a - b)[Math.floor(sc.length / 2)], medY = [...sc].map(d => d.yield).sort((a, b) => a - b)[Math.floor(sc.length / 2)];
+      const mx = Math.max(...sc.map(z => z.prod || 0)) || 1;
       Plotly.react($('scale'), [{ x: sc.map(d => d.plant), y: sc.map(d => d.yield), text: sc.map(d => P[d.p]), mode: 'markers',
-        marker: { size: sc.map(d => 8 + 18 * Math.sqrt((d.prod || 0) / Math.max(...sc.map(z => z.prod || 0)))), color: sc.map(d => d.yield >= medY ? C.cyan : C.magenta), opacity: 0.8, line: { color: '#fff', width: 0.5 } },
+        marker: { size: sc.map(d => 8 + 18 * Math.sqrt((d.prod || 0) / mx)), color: sc.map(d => d.yield >= medY ? C.cyan : C.magenta), opacity: 0.8,
+          line: { color: '#fff', width: sc.map(d => d.p === S.province ? 3 : 0.5) } },
         hovertemplate: '<b>%{text}</b><br>เนื้อที่ %{x:,.0f} ไร่<br>%{y:,.0f} กก./ไร่<extra></extra>' }],
         layout({ xaxis: axis('เนื้อที่เพาะปลูก (ไร่, log)', { type: 'log' }), yaxis: axis('กก./ไร่'),
           shapes: [{ type: 'line', xref: 'x', yref: 'paper', x0: medA, x1: medA, y0: 0, y1: 1, line: { dash: 'dash', color: 'rgba(255,255,255,0.25)' } },
@@ -192,14 +240,15 @@
       const st = stats(sc.map(d => Math.log(d.plant)), sc.map(d => d.yield));
       $('scale-insight').innerHTML = `<b>ข้อสังเกต:</b> ${P[byProd[0].p]} ผลิตได้มากที่สุด (${short(byProd[0].prod)} ตัน) แต่ผลผลิตต่อไร่อยู่อันดับ ${yRank} จาก ${sc.length} จังหวัด
         ขณะที่ ${P[byYield[0].p]} มีผลผลิตต่อไร่สูงสุด (${fmt(byYield[0].yield, 0)} กก./ไร่) โดยมีเนื้อที่เพาะปลูกอันดับ ${aRank}.
-        ${st ? `ความสัมพันธ์ระหว่างขนาดพื้นที่กับผลผลิตต่อไร่ ρ = ${st.rho.toFixed(2)} (p = ${st.ps < 0.001 ? '< 0.001' : st.ps.toFixed(3)}) แปลว่าพื้นที่ใหญ่${Math.abs(st.rho) < 0.2 ? 'แทบไม่ได้บอก' : st.rho > 0 ? 'มักมาพร้อม' : 'มักสวนทางกับ'}ประสิทธิภาพต่อไร่` : ''}
+        ${st ? `ความสัมพันธ์ระหว่างขนาดพื้นที่กับผลผลิตต่อไร่ ρ = ${st.rho.toFixed(2)} (p = ${pf(st.ps)}) แปลว่าพื้นที่ใหญ่${Math.abs(st.rho) < 0.2 ? 'แทบไม่ได้บอก' : st.rho > 0 ? 'มักมาพร้อม' : 'มักสวนทางกับ'}ประสิทธิภาพต่อไร่` : ''}
         ${S.product < 0 ? '<br>ตอนนี้รวมทุกพืช ควรเลือกพืชเดียวเพื่อเทียบผลผลิตต่อไร่ให้ถูกต้อง' : ''}`;
     }
-    const basisList = (S.product < 0 ? PROD : [PROD[S.product]]).map(p => `${p}: ${BASIS[D.basis[p]] || D.basis[p]}`);
-    $('basis-note').innerHTML = `<b>นิยามเนื้อที่ของ สศก.:</b> ${basisList.join(' · ')}. ข้อมูลความเสียหายในตารางมาจาก ปภ. ซึ่งมีเฉพาะปี 2562 และเป็นพื้นที่เกษตรที่น้ำท่วมรวมทุกพืช`;
+    const fillN = S.year === 2562 ? Object.keys(D.agFill || {}).filter(k => S.product < 0 || PROD[S.product] === k) : [];
+    $('basis-note').innerHTML = `<b>นิยามเนื้อที่ของ สศก.:</b> พืชล้มลุกใช้เนื้อที่เพาะปลูก / เก็บเกี่ยว ไม้ยืนต้น (เช่น ยางพารา ปาล์มน้ำมัน ไม้ผล) ใช้เนื้อที่ยืนต้น / ให้ผล (กรีดได้).
+      ${fillN.length ? `<br><b>หมายเหตุปี 2562:</b> ไฟล์หลักไม่มี ${fillN.join(' และ ')} ปี 2562 จึงเติมจากไฟล์รายจังหวัดของ สศก. (OAE Catalog)` : ''}
+      ${S.year === 2562 ? '<br>คอลัมน์น้ำท่วมในตารางมาจาก ปภ. ปี 2562 เป็นพื้นที่เกษตรที่เสียหายรวมทุกพืช' : ''}`;
 
-    // detailed table: one row per province x crop
-    tableRows = D.ag.filter(r => r[0] === S.year && (S.product < 0 || r[1] === S.product) && (S.region === ALL || R[r[2]] === S.region))
+    tableRows = D.ag.filter(r => r[0] === S.year && (S.product < 0 || r[1] === S.product) && (S.region === ALL || R[r[2]] === S.region) && (S.province < 0 || r[2] === S.province))
       .map(r => { const t = totals([r]), fl = S.year === 2562 && D.flood2562[r[2]] ? D.flood2562[r[2]].slice(0, 3).reduce((a, b) => a + (b || 0), 0) : null;
         return { region: R[r[2]], province: P[r[2]], code: CODE[r[2]], crop: PROD[r[1]], year: r[0], plant: t.plant, harvest: t.harvest, prod: t.prod, yield: t.yield, ratio: t.ratio, flood: fl, p: r[2] }; });
     drawTable();
@@ -209,7 +258,7 @@
   function visibleRows() {
     const q = $('t-search').value.trim().toLowerCase();
     let rows = q ? tableRows.filter(r => [r.region, r.province, r.crop, r.code].join(' ').toLowerCase().includes(q)) : [...tableRows];
-    const key = S.sortKey || ({ prod: 'prod', yield: 'yield', plant: 'plant', harvest: 'harvest', ratio: 'ratio' }[S.metric]);
+    const key = S.sortKey || S.metric;
     rows.sort((a, b) => { const x = a[key], y = b[key]; if (!ok(x) && typeof x !== 'string') return 1; if (!ok(y) && typeof y !== 'string') return -1;
       return (typeof x === 'string' ? x.localeCompare(y, 'th') : x - y) * S.sortDir; });
     return { rows, key };
@@ -231,60 +280,67 @@
   };
 
   // =================== TAB 2 ===================
-  const rainYears = Object.keys(D.rain).map(Number).filter(y => years.includes(y)).sort();
-  opts($('c-year'), rainYears.map(y => [y, y]), rainYears.includes(S.year) ? S.year : (rainYears.includes(2562) ? 2562 : rainYears[0]));
-  opts($('c-crop'), PROD.map((p, i) => [i, p]), defaultCrop());
-  const XVARS = { rain: ['ฝนสะสมทั้งปี (สสน.)', 'มม.'], season: ['ฝนฤดูเพาะปลูก พ.ค.–ต.ค. (สสน.)', 'มม.'], temp: ['อุณหภูมิเฉลี่ยทั้งปี (ERA5)', '°C'] };
-  opts($('c-x'), Object.entries(XVARS).filter(([k]) => k !== 'temp' || Object.keys(D.temp).length).map(([k, v]) => [k, v[0]]), 'rain');
-  ['c-year', 'c-crop', 'c-x'].forEach(id => $(id).onchange = () => render());
+  const climYears = [...new Set([...Object.keys(D.rain), ...Object.keys(D.tempHII || {})].map(Number))].filter(y => years.includes(y)).sort();
+  const XVARS = {
+    rain: ['ฝนสะสมทั้งปี (สสน.)', 'มม.', y => D.rain[y] || {}],
+    season: ['ฝนฤดูเพาะปลูก พ.ค.–ต.ค. (สสน.)', 'มม.', y => D.season[y] || {}],
+    tavg: ['อุณหภูมิเฉลี่ยทั้งปี (สสน.)', '°C', y => pick(D.tempHII[y], 0)],
+    tmax: ['อุณหภูมิสูงสุดของปี (สสน.)', '°C', y => pick(D.tempHII[y], 1)],
+    era5: ['อุณหภูมิเฉลี่ยทั้งปี (ERA5)', '°C', y => D.temp[y] || {}],
+  };
+  function pick(obj, k) { const o = {}; Object.entries(obj || {}).forEach(([i, a]) => { if (a && ok(a[k])) o[i] = a[k]; }); return o; }
+  opts($('c-year'), climYears.map(y => [y, y]), climYears.includes(S.year) ? S.year : climYears[climYears.length - 1]);
+  opts($('c-x'), Object.entries(XVARS).map(([k, v]) => [k, v[0]]), 'season');
+  ['c-year', 'c-x'].forEach(id => $(id).onchange = () => render());
   function renderClimate() {
-    const y = +$('c-year').value, crop = +$('c-crop').value, rain = D.rain[y] || {};
-    const rv = Object.entries(rain).filter(([, v]) => ok(v));
-    const avg = rv.reduce((a, [, v]) => a + v, 0) / rv.length, normAvg = Object.values(D.provNormal).reduce((a, b) => a + b, 0) / Object.keys(D.provNormal).length;
-    const wet = [...rv].sort((a, b) => b[1] - a[1]), nat = D.national[y];
-    $('c-kpis').innerHTML = `<div class="kpi m"><div class="l">ฝนเฉลี่ย 77 จังหวัด พ.ศ. ${y}</div><div class="v">${fmt(avg)}<small>มม.</small></div><span class="d ${avg >= normAvg ? 'up' : 'dn'}">${((avg / normAvg - 1) * 100).toFixed(1)}% เทียบค่าปกติ 30 ปี</span></div>
-      <div class="kpi c"><div class="l">ฝนเชิงพื้นที่ทั้งประเทศ (สสน.)</div><div class="v">${fmt(nat)}<small>มม.</small></div><span class="d">ค่าปกติ 2534–2563: ${fmt(D.nationalNormal)} มม.</span></div>
-      <div class="kpi p"><div class="l">ฝนมากที่สุด</div><div class="v">${fmt(wet[0][1])}<small>มม. · ${P[wet[0][0]]}</small></div></div>
-      <div class="kpi p"><div class="l">ฝนน้อยที่สุด</div><div class="v">${fmt(wet[wet.length - 1][1])}<small>มม. · ${P[wet[wet.length - 1][0]]}</small></div></div>`;
-    const vals = {}; rv.forEach(([i, v]) => { vals[i] = S.rainView === 'total' ? v : (D.provNormal[i] ? (v / D.provNormal[i] - 1) * 100 : null); });
-    $('rainmap-title').textContent = `ฝนเชิงพื้นที่ 77 จังหวัด พ.ศ. ${y}`;
-    choropleth($('rainmap'), vals, S.rainView === 'total' ? { unit: 'มม.', label: 'ฝนสะสม', scale: RAIN_SCALE, highlight: S.province, extraHover: i => D.provNormal[i] ? `<br>ค่าปกติ 30 ปี ${fmt(D.provNormal[i])} มม.` : '' }
-      : { unit: '%', label: 'ต่างจากค่าปกติ', scale: DIV_SCALE, zmid: 0, highlight: S.province, extraHover: i => `<br>ฝนจริง ${fmt(rain[i])} มม.` });
+    if (climYears.includes(S.year)) $('c-year').value = String(S.year);
+    const y = +$('c-year').value, crop = defaultCrop(), rain = D.rain[y] || {}, th = D.tempHII[y] || {};
+    $('c-note').textContent = climYears.includes(S.year) ? `ใช้ปี พ.ศ. ${y} ตามตัวกรองหลัก · พืช: ${PROD[crop]}` :
+      `ข้อมูลฝนรายจังหวัดและอุณหภูมิของ สสน. มีเฉพาะ พ.ศ. ${climYears.join(', ')} จึงแสดงปี ${y} (ตัวกรองหลักเลือก ${S.year}) · ตัวแปร ERA5 มีทุกปี 2550–2562 · พืช: ${PROD[crop]}`;
+    const rv = Object.entries(rain).filter(([i, v]) => ok(v) && inScope(+i));
+    const tv = Object.entries(th).filter(([i, a]) => a && ok(a[0]) && inScope(+i));
+    const avg = rv.length ? rv.reduce((a, [, v]) => a + v, 0) / rv.length : null;
+    const normPs = rv.map(([i]) => D.provNormal[i]).filter(ok), normAvg = normPs.length ? normPs.reduce((a, b) => a + b, 0) / normPs.length : null;
+    const wet = [...rv].sort((a, b) => b[1] - a[1]), tavg = tv.length ? tv.reduce((a, [, v]) => a + v[0], 0) / tv.length : null;
+    const hot = [...tv].sort((a, b) => b[1][1] - a[1][1]);
+    $('c-kpis').innerHTML = `<div class="kpi m"><div class="l">ฝนเฉลี่ย ${scopeLabel()} พ.ศ. ${y}</div><div class="v">${fmt(avg)}${ok(avg) ? '<small>มม.</small>' : ''}</div><span class="d ${ok(avg) && avg >= normAvg ? 'up' : 'dn'}">${ok(avg) && normAvg ? ((avg / normAvg - 1) * 100).toFixed(1) + '% เทียบค่าปกติ 30 ปี' : '–'}</span></div>
+      <div class="kpi c"><div class="l">อุณหภูมิเฉลี่ย ${scopeLabel()} (สสน.)</div><div class="v">${fmt(tavg, 1)}${ok(tavg) ? '<small>°C</small>' : ''}</div><span class="d">${tv.length} จังหวัดที่มีข้อมูล</span></div>
+      <div class="kpi p"><div class="l">ฝนมากที่สุด</div><div class="v">${wet.length ? fmt(wet[0][1]) + `<small>มม. · ${P[wet[0][0]]}</small>` : 'ไม่มีข้อมูล'}</div></div>
+      <div class="kpi p"><div class="l">อุณหภูมิสูงสุดของปี</div><div class="v">${hot.length ? fmt(hot[0][1][1], 1) + `<small>°C · ${P[hot[0][0]]}</small>` : 'ไม่มีข้อมูล'}</div></div>`;
+    const vals = {}; const reg = S.region === ALL ? null : S.region;
+    const V = S.rainView;
+    if (V === 'temp') Object.entries(th).forEach(([i, a]) => { if (a) vals[i] = a[0]; });
+    else Object.entries(V === 'season' ? (D.season[y] || {}) : rain).forEach(([i, v]) => { vals[i] = V === 'anom' ? (D.provNormal[i] ? (v / D.provNormal[i] - 1) * 100 : null) : v; });
+    $('rainmap-title').textContent = (V === 'temp' ? 'อุณหภูมิเฉลี่ยทั้งปี' : V === 'season' ? 'ฝนฤดูเพาะปลูก พ.ค.–ต.ค.' : V === 'anom' ? 'ฝนต่างจากค่าปกติ 30 ปี' : 'ฝนสะสมทั้งปี') + ` พ.ศ. ${y}`;
+    $('rainmap-sub').textContent = V === 'temp' ? `สสน. อุณหภูมิรายจังหวัดรายเดือน (จากสถานี กรมอุตุนิยมวิทยา) · มี ${Object.keys(th).length} จังหวัด ที่เหลือแสดงเป็นไม่มีข้อมูล`
+      : 'สสน. ฝนเชิงพื้นที่รายจังหวัด (IDW จากสถานี กรมอุตุนิยมวิทยา)';
+    choropleth($('rainmap'), vals, V === 'temp' ? { unit: '°C', label: 'อุณหภูมิเฉลี่ย', scale: [[0, C.blue], [0.5, C.violet], [1, C.bad]], highlight: S.province, regionOnly: reg, extraHover: i => th[i] ? `<br>สูงสุด ${th[i][1]} °C · ต่ำสุด ${th[i][2]} °C` : '' }
+      : V === 'anom' ? { unit: '%', label: 'ต่างจากค่าปกติ', scale: DIV_SCALE, zmid: 0, highlight: S.province, regionOnly: reg, extraHover: i => `<br>ฝนจริง ${fmt(rain[i])} มม. · ปกติ ${fmt(D.provNormal[i])} มม.` }
+      : { unit: 'มม.', label: V === 'season' ? 'ฝน พ.ค.–ต.ค.' : 'ฝนสะสม', scale: RAIN_SCALE, highlight: S.province, regionOnly: reg, extraHover: i => D.provNormal[i] ? `<br>ค่าปกติ 30 ปี (ทั้งปี) ${fmt(D.provNormal[i])} มม.` : '' });
 
-    // national long-term
     const ny = Object.keys(D.national).map(Number).filter(v => v >= TREND_FROM && v <= TREND_TO).sort();
-    $('nat-sub').textContent = `สสน. ฝนเชิงพื้นที่ทั้งประเทศรายเดือน รวมเป็นรายปี · เส้นประ = ค่าเฉลี่ย พ.ศ. 2534–2563 (${fmt(D.nationalNormal)} มม.)`;
+    $('nat-sub').textContent = `สสน. ฝนเชิงพื้นที่ทั้งประเทศรายเดือน รวมเป็นรายปี · เส้นประ = ค่าเฉลี่ย พ.ศ. 2534–2563 (${fmt(D.nationalNormal)} มม.) · แท่งชมพู = ปีที่เลือก`;
     Plotly.react($('national'), [
-      { type: 'bar', x: ny, y: ny.map(v => D.national[v]), marker: { color: ny.map(v => D.national[v] >= D.nationalNormal ? C.cyan : C.violet) }, hovertemplate: 'พ.ศ. %{x}: %{y:,.0f} มม.<extra></extra>' },
+      { type: 'bar', x: ny, y: ny.map(v => D.national[v]), marker: { color: ny.map(v => v === S.year ? C.magenta : D.national[v] >= D.nationalNormal ? C.cyan : C.violet) }, hovertemplate: 'พ.ศ. %{x}: %{y:,.0f} มม.<extra></extra>' },
       { x: [ny[0] - 0.5, ny[ny.length - 1] + 0.5], y: [D.nationalNormal, D.nationalNormal], mode: 'lines', line: { color: '#fff', dash: 'dash', width: 2 }, hoverinfo: 'skip' },
     ], layout({ bargap: 0.35, xaxis: axis('ปี พ.ศ.', { dtick: 2 }), yaxis: axis('มม.', { rangemode: 'tozero' }) }), CFG);
 
-    // scatter
-    const xk = $('c-x').value, src = xk === 'rain' ? rain : xk === 'season' ? (D.season[y] || {}) : (D.temp[y] || {});
-    const pts = byProvince(rowsFor({ year: y, product: crop, region: ALL, province: -1 })).filter(d => ok(d.yield) && ok(src[d.p]));
-    const [xl, xu] = XVARS[xk];
+    const xk = $('c-x').value, [xl, xu, getter] = XVARS[xk], yy = xk === 'era5' ? S.year : y, src = getter(yy);
+    const pts = byProvince(rowsFor({ year: yy, product: crop, region: ALL, province: -1 })).filter(d => ok(d.yield) && ok(src[d.p])).map(d => ({ p: d.p, x: src[d.p], y: d.yield }));
     $('scatter-title').textContent = `${xl} vs ผลผลิตต่อไร่: ${PROD[crop]}`;
-    const st = stats(pts.map(d => src[d.p]), pts.map(d => d.yield));
-    if (!st) { empty($('scatter'), xk === 'temp' && !Object.keys(D.temp).length ? 'ยังไม่มีข้อมูลอุณหภูมิ' : 'จังหวัดที่มีข้อมูลทั้งสองด้านไม่ถึง 5 จังหวัด'); $('stats').innerHTML = ''; $('scatter-sub').textContent = ''; }
+    const st = stats(pts.map(d => d.x), pts.map(d => d.y));
+    if (!st) { empty($('scatter'), 'จังหวัดที่มีข้อมูลทั้งสองด้านไม่ถึง 5 จังหวัด'); $('stats').innerHTML = ''; $('scatter-sub').textContent = `${PROD[crop]} · พ.ศ. ${yy} · มี ${pts.length} จังหวัด`; }
     else {
-      const xs = pts.map(d => src[d.p]), x0 = Math.min(...xs), x1 = Math.max(...xs);
-      Plotly.react($('scatter'), [
-        { x: xs, y: pts.map(d => d.yield), text: pts.map(d => `${P[d.p]} (${CODE[d.p]})`), mode: 'markers', marker: { size: 10, color: C.cyan, opacity: 0.85, line: { color: '#fff', width: 0.5 } },
-          hovertemplate: '<b>%{text}</b><br>' + xl + ': %{x:,.1f} ' + xu + '<br>%{y:,.0f} กก./ไร่<extra></extra>' },
-        { x: [x0, x1], y: [st.slope * x0 + st.icept, st.slope * x1 + st.icept], mode: 'lines', line: { color: C.magenta, width: 2.5, dash: 'dash' }, hoverinfo: 'skip' },
-      ], layout({ xaxis: axis(`${xl} (${xu})`), yaxis: axis('กก./ไร่') }), CFG);
-      const pf = p => p < 0.001 ? '< 0.001' : p.toFixed(3);
-      $('scatter-sub').textContent = `เส้นประ = OLS trendline (ความชัน ${st.slope.toFixed(2)} กก./ไร่ ต่อ 1 ${xu}) · พ.ศ. ${y}`;
-      $('stats').innerHTML = `<div><span>Pearson r</span><b>${st.r.toFixed(3)}</b></div><div><span>p-value (r)</span><b>${pf(st.pr)}</b></div>
-        <div><span>Spearman ρ</span><b>${st.rho.toFixed(3)}</b></div><div><span>p-value (ρ)</span><b>${pf(st.ps)}</b></div><div><span>N (จังหวัด)</span><b>${st.n}</b></div>
-        <div><span>สรุป</span><b style="font-size:14px">${st.pr < 0.05 ? 'มีนัยสำคัญ' : 'ไม่มีนัยสำคัญ'}</b></div>`;
+      scatterXY($('scatter'), pts, { xl, xu, st });
+      $('scatter-sub').textContent = `แต่ละจุด = 1 จังหวัด · เส้นประ = OLS (ความชัน ${st.slope.toFixed(2)} กก./ไร่ ต่อ 1 ${xu}) · พ.ศ. ${yy}${S.region !== ALL ? ' · จุดสีเทา = นอก' + S.region : ''}`;
+      statBox($('stats'), st);
     }
-    // season chart
     const s = D.season[y] || {};
-    const items = Object.keys(s).map(i => ({ p: +i, s: s[i], o: (rain[i] || 0) - s[i] })).sort((a, b) => b.s - a.s).slice(0, 20);
+    const items = Object.keys(s).filter(i => inScope(+i) || S.province >= 0 && R[+i] === R[S.province]).map(i => ({ p: +i, s: s[i], o: (rain[i] || 0) - s[i] })).sort((a, b) => b.s - a.s).slice(0, 20);
+    $('season-sub').textContent = `20 จังหวัดที่ฝนฤดูเพาะปลูกสูงสุด${S.region !== ALL ? 'ใน' + S.region : S.province >= 0 ? 'ในภาคเดียวกับ ' + P[S.province] : ''} · พ.ศ. ${y} · สสน.`;
     if (!items.length) return empty($('season'), 'ไม่มีข้อมูลฝนรายเดือน');
     Plotly.react($('season'), [
-      { type: 'bar', orientation: 'h', y: items.map(d => P[d.p]), x: items.map(d => d.s), name: 'ฤดูเพาะปลูก พ.ค.–ต.ค.', marker: { color: C.cyan }, hovertemplate: '%{y}: %{x:,.0f} มม. (พ.ค.–ต.ค.)<extra></extra>' },
+      { type: 'bar', orientation: 'h', y: items.map(d => P[d.p]), x: items.map(d => d.s), name: 'ฤดูเพาะปลูก พ.ค.–ต.ค.', marker: { color: items.map(d => d.p === S.province ? C.magenta : C.cyan) }, hovertemplate: '%{y}: %{x:,.0f} มม. (พ.ค.–ต.ค.)<extra></extra>' },
       { type: 'bar', orientation: 'h', y: items.map(d => P[d.p]), x: items.map(d => d.o), name: 'นอกฤดู', marker: { color: C.violet }, hovertemplate: '%{y}: %{x:,.0f} มม. (นอกฤดู)<extra></extra>' },
     ], layout({ barmode: 'stack', bargap: 0.3, showlegend: true, legend: { orientation: 'h', y: 1.07, font: { color: C.fg2 } }, margin: { l: 10, r: 10, t: 30, b: 34 },
       yaxis: axis(null, { autorange: 'reversed', tickfont: { color: C.fg2 }, gridcolor: 'rgba(0,0,0,0)' }), xaxis: axis('มม.') }), CFG);
@@ -292,57 +348,131 @@
 
   // =================== TAB 3 ===================
   const soilCrops = Object.keys(D.soil).sort((a, b) => a.localeCompare(b, 'th'));
-  opts($('s-crop'), soilCrops.map(c => [c, c]), soilCrops.includes('มันสำปะหลังโรงงาน') ? 'มันสำปะหลังโรงงาน' : soilCrops[0]);
+  opts($('s-crop'), soilCrops.map(c => [c, c]), soilCrops.includes('ข้าวนาปี') ? 'ข้าวนาปี' : soilCrops[0]);
   $('s-crop').onchange = () => render();
+  const s12 = (crop, i) => { const a = (D.soil[crop] || {})[i]; if (!a) return null; const t = a.reduce((x, y) => x + (y || 0), 0); return t > 0 ? ((a[0] || 0) + (a[1] || 0)) / t * 100 : null; };
+  const FX = {
+    irr: ['พื้นที่โครงการชลประทาน (% ของพื้นที่จังหวัด)', '%', i => D.irr[i] ? D.irr[i][4] : null],
+    irrh: ['พื้นที่โครงการชลประทาน ÷ เนื้อที่ถือครองเกษตร (เกิน 100% ได้ เพราะขอบเขตโครงการรวมพื้นที่นอกการเกษตร)', '%', i => D.irr[i] ? D.irr[i][5] : null],
+    mech: ['ผู้ถือครองที่ใช้เครื่องจักร (%)', '%', i => D.mech[i] ? D.mech[i][2] : null],
+    fert: ['ผู้ถือครองที่ใช้ปุ๋ย (%)', '%', i => D.fert[i]],
+    soil: ['ดินเหมาะสม S1+S2 ของพืชนี้ (%)', '%', i => s12(PROD[defaultCrop()], i)],
+    flood: ['พื้นที่เกษตรน้ำท่วม ปภ. 2562 (ไร่)', 'ไร่', i => D.flood2562[i] ? D.flood2562[i].slice(0, 3).reduce((a, b) => a + (b || 0), 0) : null],
+  };
+  opts($('f-x'), Object.entries(FX).map(([k, v]) => [k, v[0]]), 'irr');
+  $('f-x').onchange = () => render();
+  const hhYears = Object.keys(D.household || {}).sort();
+  opts($('h-year'), hhYears.map(y => [y, y]), hhYears[hhYears.length - 1]);
+  $('h-year').onchange = () => render();
   function renderFactors() {
-    const crop = $('s-crop').value, s = D.soil[crop] || {}, pct = {}, rows = [];
-    Object.entries(s).forEach(([i, a]) => { const tot = a.reduce((x, y) => x + (y || 0), 0); if (tot > 0) { pct[i] = ((a[0] || 0) + (a[1] || 0)) / tot * 100; rows.push({ p: +i, a, tot }); } });
-    $('soilmap-title').textContent = `ความเหมาะสมของดิน Agri-Map: ${crop}`;
-    choropleth($('soilmap'), pct, { unit: '%', label: 'S1+S2', highlight: S.province, extraHover: i => s[i] ? `<br>S1 ${short(s[i][0])} · S2 ${short(s[i][1])} · S3 ${short(s[i][2])} · N ${short(s[i][3])} ไร่` : '' });
+    const reg = S.region === ALL ? null : S.region, crop = defaultCrop();
+    // KPIs (scope-aware)
+    const idx = P.map((_, i) => i).filter(inScope);
+    const sum = f => idx.reduce((a, i) => a + (f(i) || 0), 0);
+    const irrRai = sum(i => D.irr[i] && D.irr[i][0]), provRai = sum(i => D.irr[i] && D.irr[i][2]), hold = sum(i => D.land[i] && D.land[i]['เนื้อที่ถือครองทำการเกษตร']);
+    const mu = sum(i => D.mech[i] && D.mech[i][0]), mr = sum(i => D.mech[i] && D.mech[i][1]);
+    const dz = sum(i => D.doae[i] && D.doae[i][0] + D.doae[i][1]), dzo = sum(i => D.doae[i] && D.doae[i][2] + D.doae[i][3]);
+    $('f-kpis').innerHTML = `<div class="kpi m"><div class="l">พื้นที่โครงการชลประทาน ${scopeLabel()}</div><div class="v">${short(irrRai)}<small>ไร่</small></div><span class="d">${provRai ? (irrRai / provRai * 100).toFixed(1) + '% ของพื้นที่' : '–'} · ${hold ? (irrRai / hold * 100).toFixed(1) + '% ของเนื้อที่ถือครองเกษตร' : ''}</span></div>
+      <div class="kpi c"><div class="l">ผู้ถือครองที่ใช้เครื่องจักร</div><div class="v">${mr ? (mu / mr * 100).toFixed(1) : 'ไม่มีข้อมูล'}${mr ? '<small>%</small>' : ''}</div><span class="d">${fmt(mu)} จาก ${fmt(mr)} ราย (สสช.)</span></div>
+      <div class="kpi p"><div class="l">พื้นที่ประสบภัย ในเขตชลประทาน (กสก.)</div><div class="v">${short(dz)}<small>ไร่</small></div><span class="d">อุทกภัย + ภัยแล้ง</span></div>
+      <div class="kpi p"><div class="l">พื้นที่ประสบภัย นอกเขตชลประทาน (กสก.)</div><div class="v">${short(dzo)}<small>ไร่</small></div><span class="d">${dz + dzo ? (dzo / (dz + dzo) * 100).toFixed(0) + '% ของพื้นที่ประสบภัยทั้งหมด' : '–'}</span></div>`;
+    // factor map
+    const fv = {}, V = S.fView;
+    if (V === 'irr') Object.entries(D.irr).forEach(([i, a]) => fv[i] = a[4]);
+    else if (V === 'mech') Object.entries(D.mech).forEach(([i, a]) => { if (a) fv[i] = a[2]; });
+    else Object.entries(D.fert).forEach(([i, v]) => fv[i] = v);
+    $('fmap-title').textContent = V === 'irr' ? 'พื้นที่โครงการชลประทาน (% ของพื้นที่จังหวัด)' : V === 'mech' ? 'ผู้ถือครองที่ใช้เครื่องจักรการเกษตร (%)' : 'ผู้ถือครองที่ใช้ปุ๋ย (%)';
+    $('fmap-sub').textContent = V === 'irr' ? 'กรมชลประทาน ขอบเขตโครงการขนาดใหญ่ 93 + กลาง 506 โครงการ ซ้อนกับขอบเขตจังหวัดบนกริด 0.01° (ประมาณ 1.1 กม.) ไม่รวมโครงการขนาดเล็กและสูบน้ำด้วยไฟฟ้า'
+      : 'สสช. สำมะโนการเกษตร (ปีสำมะโนไม่ระบุในไฟล์ ชุดนี้มีข้อมูลโดรนจึงน่าจะเป็นรอบ พ.ศ. 2566) · ร้อยละของผู้ถือครองที่รายงาน';
+    choropleth($('fmap'), fv, { unit: '%', label: V === 'irr' ? 'พื้นที่ชลประทาน' : V === 'mech' ? 'ใช้เครื่องจักร' : 'ใช้ปุ๋ย', highlight: S.province, regionOnly: reg,
+      scale: V === 'irr' ? RAIN_SCALE : MAP_SCALE,
+      extraHover: i => V === 'irr' && D.irr[i] ? `<br>${fmt(D.irr[i][0])} ไร่ (ขนาดใหญ่ ${fmt(D.irr[i][1])})<br>เทียบเนื้อที่ถือครองเกษตร ${fmt(D.irr[i][5], 1)}%`
+        : V === 'mech' && D.mech[i] ? `<br>${fmt(D.mech[i][0])} จาก ${fmt(D.mech[i][1])} ราย` : '' });
+    // factor vs yield
+    const [xl, xu, get] = FX[$('f-x').value];
+    const pts = byProvince(rowsFor({ year: S.year, product: crop, region: ALL, province: -1 })).filter(d => ok(d.yield) && ok(get(d.p))).map(d => ({ p: d.p, x: get(d.p), y: d.yield }));
+    const st = stats(pts.map(d => d.x), pts.map(d => d.y));
+    $('fsc-title').textContent = `${xl.split(' (')[0]} vs ผลผลิตต่อไร่: ${PROD[crop]}`;
+    $('fsc-sub').textContent = `แต่ละจุด = 1 จังหวัด · ผลผลิตต่อไร่ พ.ศ. ${S.year} (สศก.) · ปัจจัยเป็นค่าคงที่ของจังหวัด ไม่ใช่รายปี${S.region !== ALL ? ' · จุดสีเทา = นอก' + S.region : ''}`;
+    if (!st) { empty($('fsc'), `มีจังหวัดที่มีข้อมูลทั้งสองด้าน ${pts.length} จังหวัด (ต้องมีอย่างน้อย 5)`); $('fstats').innerHTML = ''; }
+    else { scatterXY($('fsc'), pts, { xl, xu, st, logx: xu === 'ไร่' }); statBox($('fstats'), st); }
+    // Agri-Map
+    if (D.soil[PROD[crop]] && $('s-crop').dataset.auto !== PROD[crop]) { $('s-crop').value = PROD[crop]; $('s-crop').dataset.auto = PROD[crop]; }
+    const scrop = $('s-crop').value, s = D.soil[scrop] || {}, pct = {}, rows = [];
+    Object.entries(s).forEach(([i, a]) => { const tot = a.reduce((x, y) => x + (y || 0), 0); if (tot > 0) { pct[i] = ((a[0] || 0) + (a[1] || 0)) / tot * 100; if (S.region === ALL || R[+i] === S.region) rows.push({ p: +i, a, tot }); } });
+    $('soilmap-title').textContent = `ความเหมาะสมของดิน Agri-Map: ${scrop}`;
+    choropleth($('soilmap'), pct, { unit: '%', label: 'S1+S2', highlight: S.province, regionOnly: reg, extraHover: i => s[i] ? `<br>S1 ${short(s[i][0])} · S2 ${short(s[i][1])} · S3 ${short(s[i][2])} · N ${short(s[i][3])} ไร่` : '' });
     const top = rows.sort((a, b) => b.tot - a.tot).slice(0, 15);
+    $('soilbar-sub').textContent = `15 จังหวัดที่มีพื้นที่ประเมินมากที่สุด${S.region !== ALL ? 'ใน' + S.region : ''} (ร้อยละของพื้นที่ประเมิน)`;
     const cls = [['S1 เหมาะสมสูง', C.cyan], ['S2 ปานกลาง', C.blue], ['S3 เล็กน้อย', C.violet], ['N ไม่เหมาะสม', C.magenta]];
+    if (!top.length) empty($('soilbar'), 'ไม่มีข้อมูล Agri-Map ในพื้นที่ที่เลือก'); else
     Plotly.react($('soilbar'), cls.map(([n, col], k) => ({ type: 'bar', orientation: 'h', name: n, y: top.map(d => P[d.p]), x: top.map(d => (d.a[k] || 0) / d.tot * 100),
       customdata: top.map(d => d.a[k] || 0), marker: { color: col }, hovertemplate: '%{y}: %{x:.1f}% (%{customdata:,.0f} ไร่)<extra>' + n + '</extra>' })),
       layout({ barmode: 'stack', bargap: 0.3, showlegend: true, legend: { orientation: 'h', y: 1.06, font: { color: C.fg2 } }, margin: { l: 10, r: 10, t: 34, b: 34 },
         yaxis: axis(null, { autorange: 'reversed', tickfont: { color: C.fg2 }, gridcolor: 'rgba(0,0,0,0)' }), xaxis: axis('% ของพื้นที่ประเมิน', { range: [0, 100] }) }), CFG);
-
-    // disasters 2562
+    // DDPM 2562
     if (S.disView === 'flood') {
       const v = {}; Object.entries(D.flood2562).forEach(([i, a]) => { const t = (a[0] || 0) + (a[1] || 0) + (a[2] || 0); if (t > 0) v[i] = t; });
-      const total = Object.values(v).reduce((a, b) => a + b, 0);
-      $('dis-sub').textContent = `ปภ. สถิติอุทกภัย พ.ศ. 2562 · นาข้าว + พืชสวน + พืชไร่ที่เสียหาย · รวม ${fmt(total)} ไร่ ใน ${Object.keys(v).length} จังหวัด`;
-      choropleth($('dismap'), v, { unit: 'ไร่', label: 'พื้นที่เกษตรเสียหาย', scale: RISK_SCALE, highlight: S.province,
+      const shown = Object.keys(v).filter(i => S.region === ALL || R[+i] === S.region), total = shown.reduce((a, i) => a + v[i], 0);
+      $('dis-sub').textContent = `ปภ. สถิติอุทกภัย พ.ศ. 2562 · นาข้าว + พืชสวน + พืชไร่ที่เสียหาย · รวม ${fmt(total)} ไร่ ใน ${shown.length} จังหวัด${S.region !== ALL ? 'ของ' + S.region : ''}`;
+      choropleth($('dismap'), v, { unit: 'ไร่', label: 'พื้นที่เกษตรเสียหาย', scale: RISK_SCALE, highlight: S.province, regionOnly: reg,
         extraHover: i => `<br>นาข้าว ${fmt(D.flood2562[i][0])} · พืชสวน ${fmt(D.flood2562[i][1])} · พืชไร่ ${fmt(D.flood2562[i][2])} ไร่<br>มูลค่าความเสียหายภาคเกษตร ${fmt(D.flood2562[i][3])} บาท` });
-      const top = Object.keys(v).map(Number).sort((a, b) => v[b] - v[a]).slice(0, 10);
+      const top = shown.map(Number).sort((a, b) => v[b] - v[a]).slice(0, 10);
       $('disbar-title').textContent = '10 จังหวัดพื้นที่เกษตรน้ำท่วมมากที่สุด พ.ศ. 2562'; $('disbar-sub').textContent = 'แยกตามประเภทพื้นที่ (ไร่)';
+      if (!top.length) empty($('disbar'), 'ไม่มีจังหวัดที่น้ำท่วมในพื้นที่ที่เลือก'); else
       Plotly.react($('disbar'), [['นาข้าว', 0, C.cyan], ['พืชสวน', 1, C.violet], ['พืชไร่', 2, C.magenta]].map(([n, k, col]) => ({ type: 'bar', orientation: 'h', name: n,
         y: top.map(i => P[i]), x: top.map(i => D.flood2562[i][k] || 0), marker: { color: col }, hovertemplate: '%{y}: %{x:,.0f} ไร่<extra>' + n + '</extra>' })),
         layout({ barmode: 'stack', bargap: 0.3, showlegend: true, legend: { orientation: 'h', y: 1.07, font: { color: C.fg2 } }, margin: { l: 10, r: 10, t: 30, b: 34 },
           yaxis: axis(null, { autorange: 'reversed', tickfont: { color: C.fg2 }, gridcolor: 'rgba(0,0,0,0)' }), xaxis: axis('ไร่') }), CFG);
     } else {
       const v = {}; Object.entries(D.drought2562).forEach(([i, n]) => v[i] = n);
-      $('dis-sub').textContent = `ปภ. สถิติภัยแล้ง พ.ศ. 2562 · หมู่บ้านที่ประกาศเขตการให้ความช่วยเหลือ · รวม ${fmt(Object.values(v).reduce((a, b) => a + b, 0))} หมู่บ้าน ใน ${Object.keys(v).length} จังหวัด`;
-      choropleth($('dismap'), v, { unit: 'หมู่บ้าน', label: 'หมู่บ้านที่ประกาศภัยแล้ง', scale: RISK_SCALE, highlight: S.province });
-      const top = Object.keys(v).map(Number).sort((a, b) => v[b] - v[a]).slice(0, 10);
+      const shown = Object.keys(v).filter(i => S.region === ALL || R[+i] === S.region);
+      $('dis-sub').textContent = `ปภ. สถิติภัยแล้ง พ.ศ. 2562 · หมู่บ้านที่ประกาศเขตการให้ความช่วยเหลือ · รวม ${fmt(shown.reduce((a, i) => a + v[i], 0))} หมู่บ้าน ใน ${shown.length} จังหวัด`;
+      choropleth($('dismap'), v, { unit: 'หมู่บ้าน', label: 'หมู่บ้านที่ประกาศภัยแล้ง', scale: RISK_SCALE, highlight: S.province, regionOnly: reg });
+      const top = shown.map(Number).sort((a, b) => v[b] - v[a]).slice(0, 10);
       $('disbar-title').textContent = '10 จังหวัดที่ประกาศภัยแล้งมากที่สุด พ.ศ. 2562'; $('disbar-sub').textContent = 'จำนวนหมู่บ้าน';
       hbar($('disbar'), top.map(i => ({ name: P[i], code: CODE[i], v: v[i], sel: i === S.province })), { unit: 'หมู่บ้าน', scale: [[0, C.warn], [1, C.bad]] });
+    }
+    // DOAE in/out irrigation
+    const dk = Object.keys(D.doae).map(Number).filter(i => S.region === ALL || R[i] === S.region).filter(i => D.doae[i].some(v => v > 0));
+    const tot = i => D.doae[i].reduce((a, b) => a + (b || 0), 0);
+    const dtop = dk.sort((a, b) => tot(b) - tot(a)).slice(0, 15);
+    if (S.province >= 0 && D.doae[S.province] && !dtop.includes(S.province)) dtop.push(S.province);
+    const allIn = dk.reduce((a, i) => a + D.doae[i][0] + D.doae[i][1], 0), allOut = dk.reduce((a, i) => a + D.doae[i][2] + D.doae[i][3], 0);
+    $('doae-sub').textContent = `15 จังหวัดที่มีพื้นที่ประสบภัยรวมมากที่สุด${S.region !== ALL ? 'ใน' + S.region : ''} · ไร่ · รวมจากระดับตำบล`;
+    if (!dtop.length) empty($('doae'), 'ไม่มีข้อมูลในพื้นที่ที่เลือก'); else
+    Plotly.react($('doae'), [['อุทกภัย ในเขตชลประทาน', 0, C.blue], ['อุทกภัย นอกเขต', 2, C.cyan], ['ภัยแล้ง ในเขตชลประทาน', 1, C.warn], ['ภัยแล้ง นอกเขต', 3, C.bad]].map(([n, k, col]) => ({
+      type: 'bar', orientation: 'h', name: n, y: dtop.map(i => P[i]), x: dtop.map(i => D.doae[i][k] || 0), marker: { color: col }, hovertemplate: '%{y}: %{x:,.0f} ไร่<extra>' + n + '</extra>' })),
+      layout({ barmode: 'stack', bargap: 0.3, showlegend: true, legend: { orientation: 'h', y: 1.08, font: { color: C.fg2 } }, margin: { l: 10, r: 10, t: 46, b: 34 },
+        yaxis: axis(null, { autorange: 'reversed', tickfont: { color: C.fg2 }, gridcolor: 'rgba(0,0,0,0)' }), xaxis: axis('ไร่') }), CFG);
+    $('doae-note').innerHTML = `<b>สรุป:</b> พื้นที่ประสบภัยในเขตชลประทาน ${fmt(allIn)} ไร่ นอกเขต ${fmt(allOut)} ไร่ (${allIn + allOut ? (allOut / (allIn + allOut) * 100).toFixed(0) : '–'}% อยู่นอกเขต). ไฟล์ของ กสก. ไม่ระบุปีของเหตุการณ์ จึงใช้เปรียบเทียบสัดส่วนในเขต/นอกเขต ไม่ควรนำไปรวมกับข้อมูล ปภ. ปี 2562`;
+    // household expense donut
+    const hy = $('h-year').value, hrows = (D.household[hy] || []);
+    if (!hrows.length) empty($('donut'), 'ไม่มีข้อมูล'); else {
+      const lab = hrows.map(r => (r[0].includes('นอก') ? 'นอกการเกษตร: ' : 'การเกษตร: ') + r[1]), val = hrows.map(r => r[2]);
+      const farm = hrows.filter(r => !r[0].includes('นอก')).reduce((a, r) => a + r[2], 0), all = val.reduce((a, b) => a + b, 0);
+      Plotly.react($('donut'), [{ type: 'pie', hole: 0.62, labels: lab, values: val, sort: false, textinfo: 'percent', textfont: { color: '#fff' },
+        marker: { colors: [C.magenta, C.violet, C.blue, C.sky, '#3A4080'], line: { color: '#181D45', width: 2 } }, hovertemplate: '%{label}<br>%{value:,.0f} บาท/ครัวเรือน (%{percent})<extra></extra>' }],
+        layout({ showlegend: true, legend: { orientation: 'h', y: -0.05, font: { color: C.fg2 } }, margin: { l: 10, r: 10, t: 10, b: 10 },
+          annotations: [{ text: `<b>${fmt(farm)}</b><br>บาท รายจ่ายการเกษตร<br>${(farm / all * 100).toFixed(0)}% ของรายจ่ายเงินสด`, showarrow: false, font: { color: C.fg, size: 13 } }] }), CFG);
     }
   }
 
   // =================== TAB 4 ===================
   const priceNames = Object.keys(D.prices);
-  opts($('m-product'), priceNames.map(p => [p, p]), priceNames[0]);
-  opts($('m-range'), [['2561-2562', 'พ.ศ. 2561–2562'], ['52', '52 สัปดาห์ล่าสุด'], ['all', 'ทั้งหมด'], ...[...new Set(Object.values(D.prices).flat().map(r => r[0]))].sort().reverse().map(y => [y, 'พ.ศ. ' + y])], '2561-2562');
+  opts($('m-product'), priceNames.map(p => [p, p]), PRICE_FOR[PROD[defaultCrop()]] || priceNames[0]);
+  opts($('m-range'), [['sel', 'ปีที่เลือกในตัวกรองหลัก'], ['2561-2562', 'พ.ศ. 2561–2562'], ['52', '52 สัปดาห์ล่าสุด'], ['all', 'ทั้งหมด']], 'sel');
   ['m-product', 'm-range'].forEach(id => $(id).onchange = () => render());
   function priceRows(name, rng) {
     const all = D.prices[name] || [];
-    return rng === '52' ? all.slice(-52) : rng === 'all' ? all : rng === '2561-2562' ? all.filter(r => r[0] === 2561 || r[0] === 2562) : all.filter(r => r[0] === +rng);
+    return rng === '52' ? all.slice(-52) : rng === 'all' ? all : rng === '2561-2562' ? all.filter(r => r[0] === 2561 || r[0] === 2562) : all.filter(r => r[0] === S.year);
   }
+  const COST = D.cost.crops, CY = D.cost.years;
   function renderEconomics() {
     const name = $('m-product').value, rng = $('m-range').value, rows = priceRows(name, rng);
     const total2 = Object.values(D.prices).flat().filter(r => r[0] === 2561 || r[0] === 2562).length;
     $('price-title').textContent = `แนวโน้มราคารายสัปดาห์: ${name}`;
-    if (!rows.length) { $('m-kpis').innerHTML = `<div class="kpi p"><div class="l">ไม่มีข้อมูลในช่วงที่เลือก</div><div class="v">–</div><span class="d">ชุดนี้มีข้อมูล พ.ศ. ${D.prices[name][0][0]}–${D.prices[name][D.prices[name].length - 1][0]}</span></div>`; empty($('price'), 'ไม่มีข้อมูลราคาในช่วงที่เลือก'); }
+    if (!rows.length) { $('m-kpis').innerHTML = `<div class="kpi p"><div class="l">ไม่มีข้อมูลในช่วงที่เลือก${rng === 'sel' ? ' (พ.ศ. ' + S.year + ')' : ''}</div><div class="v">–</div><span class="d">ชุดนี้มีข้อมูล พ.ศ. ${D.prices[name][0][0]}–${D.prices[name][D.prices[name].length - 1][0]}</span></div>`; empty($('price'), 'ไม่มีข้อมูลราคาในช่วงที่เลือก'); }
     else {
       const v = rows.map(r => r[3]), mean = v.reduce((a, b) => a + b) / v.length, last = v[v.length - 1], prev = v.length > 1 ? v[v.length - 2] : null;
       const lab = r => `${r[0]}-${String(r[1]).padStart(2, '0')} ส.${r[2]}`, wow = prev ? (last - prev) / prev * 100 : null;
@@ -357,26 +487,50 @@
         { x, y: ma, mode: 'lines', line: { shape: 'spline', color: '#FFFFFF', width: 2, dash: 'dash' }, hovertemplate: 'เฉลี่ย 8 สัปดาห์: %{y:,.2f}<extra></extra>' },
       ], layout({ xaxis: axis(null, { nticks: 10 }), yaxis: axis('บาท/กก.', { rangemode: 'tozero' }) }), CFG);
     }
+    // OAE cost / price / net per ton
+    const crop = PROD[+$('k-crop').value], c = COST[crop];
+    $('cost-title').textContent = `ต้นทุน ราคา และผลตอบแทนสุทธิต่อตัน: ${crop}`;
+    $('cost-sub').textContent = c ? `สศก. สถานการณ์สินค้าเกษตรฯ หน้า ${c.page} · ${c.note} · ปี ${CY.join(', ')}` : '';
+    if (!c) empty($('costbar'), `สศก. ไม่ได้เผยแพร่ต้นทุนการผลิตของ${crop}ในเอกสารนี้ — ไม่มีข้อมูล`);
+    else Plotly.react($('costbar'), [['ต้นทุนการผลิต', 'cost', C.magenta], ['ราคาที่เกษตรกรขายได้', 'price', C.cyan], ['ผลตอบแทนสุทธิ', 'net', C.ok]].map(([n, k, col]) => ({
+      type: 'bar', name: n, x: CY.map(String), y: c[k], marker: { color: k === 'net' ? c.net.map(v => v >= 0 ? C.ok : C.bad) : col },
+      text: c[k].map(v => fmt(v)), textposition: 'outside', textfont: { color: C.fg, size: 11 }, cliponaxis: false, hovertemplate: 'พ.ศ. %{x} · ' + n + ': %{y:,.0f} บาท/ตัน<extra></extra>' })),
+      layout({ barmode: 'group', bargap: 0.25, showlegend: true, legend: { orientation: 'h', y: 1.12, font: { color: C.fg2 } }, margin: { l: 10, r: 10, t: 40, b: 34 },
+        xaxis: axis('ปี พ.ศ.', { type: 'category' }), yaxis: axis('บาท/ตัน') }), CFG);
+    const all = Object.entries(COST).map(([n, v]) => ({ n, m: v.net[2] / v.price[2] * 100, net: v.net[2], cost: v.cost[2], price: v.price[2] })).sort((a, b) => b.m - a.m);
+    Plotly.react($('costall'), [{ type: 'bar', orientation: 'h', y: all.map(d => d.n), x: all.map(d => d.m), text: all.map(d => d.m.toFixed(0) + '%'), textposition: 'outside', cliponaxis: false,
+      textfont: { color: C.fg }, customdata: all.map(d => [d.cost, d.price, d.net]),
+      marker: { color: all.map(d => d.m < 0 ? C.bad : C.cyan), line: { width: all.map(d => d.n === crop ? 2.5 : 0), color: '#fff' } },
+      hovertemplate: '<b>%{y}</b> ปี 2567<br>ต้นทุน %{customdata[0]:,.0f} · ราคา %{customdata[1]:,.0f} · สุทธิ %{customdata[2]:,.0f} บาท/ตัน<br>อัตรากำไร %{x:.1f}%<extra></extra>' }],
+      layout({ margin: { l: 10, r: 46, t: 6, b: 34 }, yaxis: axis(null, { autorange: 'reversed', tickfont: { color: C.fg2 }, gridcolor: 'rgba(0,0,0,0)' }), xaxis: axis('% ของราคา') }), CFG);
     calcRefs(); calc();
   }
   opts($('k-crop'), PROD.map((p, i) => [i, p]), defaultCrop());
   let kTouched = {};
   ['k-area', 'k-yield', 'k-cost', 'k-price'].forEach(id => $(id).oninput = () => { kTouched[id] = true; calc(); });
-  $('k-crop').onchange = () => { kTouched = {}; calcRefs(); calc(); };
+  $('k-crop').onchange = () => { kTouched = {}; ['k-yield', 'k-cost', 'k-price'].forEach(id => $(id).value = ''); render(); };
   let REF = {};
   function calcRefs() {
     const k = +$('k-crop').value, crop = PROD[k], nat = totals(rowsFor({ year: S.year, product: k, region: ALL, province: -1 }));
+    const loc = S.province >= 0 || S.region !== ALL ? totals(rowsFor({ year: S.year, product: k })) : null;
     const pname = PRICE_FOR[crop], pr = pname ? (D.prices[pname] || []) : [];
-    const sameYear = pr.filter(r => r[0] === S.year), use = sameYear.length ? sameYear : pr.slice(-52);
-    const price = use.length ? use.reduce((a, r) => a + r[3], 0) / use.length : null;
-    REF = { yield: nat.yield, price, pname, priceNote: !pname ? 'ไม่มีราคาของพืชนี้ใน API' : sameYear.length ? `เฉลี่ย พ.ศ. ${S.year} (${sameYear.length} สัปดาห์)` : 'ไม่มีราคาปีที่เลือก ใช้ 52 สัปดาห์ล่าสุด' };
-    $('k-ref').innerHTML = `<div><span>ผลผลิตต่อไร่ถ่วงน้ำหนักทั้งประเทศ พ.ศ. ${S.year}</span><b>${fmt(nat.yield, 0)} กก./ไร่</b></div>
-      <div><span>ราคาที่เกษตรกรขายได้${pname ? ` (${pname})` : ''}<br><span class="muted">${REF.priceNote}</span></span><b>${ok(price) ? fmt(price, 2) + ' บาท/กก.' : 'ไม่มีข้อมูล'}</b></div>
-      <div><span>ต้นทุนการผลิตต่อไร่ (สศก.)</span><b><span class="chip">ไม่มีข้อมูลเปิด</span></b></div>`;
-    if (!kTouched['k-yield'] && ok(nat.yield)) $('k-yield').value = Math.round(nat.yield);
-    if (!kTouched['k-price'] && ok(price)) $('k-price').value = price.toFixed(2);
+    const sameYear = pr.filter(r => r[0] === S.year);
+    const nabc = sameYear.length ? sameYear.reduce((a, r) => a + r[3], 0) / sameYear.length : null;
+    const c = COST[crop], last = CY.length - 1, pY = ok(loc && loc.yield) ? loc.yield : nat.yield;
+    const oaeCostRai = c ? c.cost[last] * c.yield[last] / 1000 : null, oaePrice = c ? c.price[last] / 1000 : null;
+    // benchmark set used by the button: one consistent source/year (OAE commodity report) when available, else production yield + NABC price
+    REF = c ? { yield: c.yield[last], price: oaePrice, cost: oaeCostRai, src: `ชุดอ้างอิงเดียวกันของ สศก. ปี ${CY[last]} (ผลผลิต ${fmt(c.yield[last])} กก./ไร่ · ราคา ${fmt(oaePrice, 2)} บาท/กก. · ต้นทุน ${fmt(oaeCostRai)} บาท/ไร่)` }
+      : { yield: ok(loc && loc.yield) ? loc.yield : nat.yield, price: nabc, cost: null, src: `ผลผลิต สศก. พ.ศ. ${S.year}${ok(nabc) ? ' + ราคา NABC ปีเดียวกัน' : ''} · ไม่มีต้นทุนอ้างอิง ต้องกรอกเอง` };
+    const row = (l, v, src) => `<div><span>${l}<br><span class="muted">${src}</span></span><b>${v}</b></div>`;
+    $('k-ref').innerHTML =
+      row(`ผลผลิตต่อไร่ถ่วงน้ำหนัก ${scopeLabel()}`, ok(pY) ? fmt(pY, 0) + ' กก./ไร่' : 'ไม่มีข้อมูล', `สศก. ข้อมูลการผลิต พ.ศ. ${S.year}`) +
+      row('ราคาที่เกษตรกรขายได้ (รายสัปดาห์)', ok(nabc) ? fmt(nabc, 2) + ' บาท/กก.' : 'ไม่มีข้อมูล', pname ? `NABC ${pname} · ${sameYear.length ? `เฉลี่ย ${sameYear.length} สัปดาห์ของ พ.ศ. ${S.year}` : `ไม่มีราคาปี ${S.year}`}` : 'API ไม่มีราคารายสัปดาห์ของพืชนี้') +
+      row('ราคาที่เกษตรกรขายได้ (รายปี)', ok(oaePrice) ? fmt(oaePrice, 2) + ' บาท/กก.' : 'ไม่มีข้อมูล', c ? `สศก. ปี ${CY[last]} · ${c.note}` : 'สศก. ไม่ได้เผยแพร่สำหรับพืชนี้') +
+      row('ต้นทุนการผลิตต่อไร่', ok(oaeCostRai) ? fmt(oaeCostRai, 0) + ' บาท/ไร่' : 'ไม่มีข้อมูล', c ? `สศก. ปี ${CY[last]}: ${fmt(c.cost[last])} บาท/ตัน × ${fmt(c.yield[last])} กก./ไร่` : 'สศก. ไม่ได้เผยแพร่สำหรับพืชนี้') +
+      `<div class="note info" style="display:block"><b>ปุ่ม “นำค่าอ้างอิงไปใส่”</b> ใช้${REF.src}</div>` +
+      row('ต้นทุนการผลิตต่อ กก.', c ? fmt(c.cost[last] / 1000, 2) + ' บาท/กก.' : 'ไม่มีข้อมูล', c ? `ผลตอบแทนสุทธิ ${fmt(c.net[last])} บาท/ตัน` : '–');
   }
-  $('k-use').onclick = () => { if (ok(REF.yield)) $('k-yield').value = Math.round(REF.yield); if (ok(REF.price)) $('k-price').value = REF.price.toFixed(2); calc(); };
+  $('k-use').onclick = () => { if (ok(REF.yield)) $('k-yield').value = Math.round(REF.yield); if (ok(REF.price)) $('k-price').value = REF.price.toFixed(2); if (ok(REF.cost)) $('k-cost').value = Math.round(REF.cost); calc(); };
   function calc() {
     const num = id => $(id).value === '' ? null : +$(id).value;
     const a = num('k-area'), yl = num('k-yield'), c = num('k-cost'), p = num('k-price');
@@ -385,21 +539,22 @@
     const box = (l, v, u, cls = '') => `<div><span>${l}</span><b class="${cls}">${ok(v) ? fmt(v, u === 'บาท/กก.' ? 2 : 0) + ' ' + u : 'กรอกข้อมูลก่อน'}</b></div>`;
     $('k-out').innerHTML = box('Total Cost', cost, 'บาท') + box('Total Yield', out, 'กก.') + box('Revenue', rev, 'บาท') +
       box('Estimated Profit', profit, 'บาท', !ok(profit) ? '' : profit >= 0 ? 'pos' : 'neg') + box('Break-even Yield', beY, 'กก./ไร่') + box('Break-even Price', beP, 'บาท/กก.');
-    // cost per unit vs sale price
-    if (!ok(beP) || !ok(p)) { empty($('margin'), 'กรอกต้นทุนต่อไร่ ผลผลิต และราคา เพื่อดูส่วนต่างต่อ กก.'); return; }
-    const m = p - beP, mk = ok(REF.price) ? REF.price : null;
-    const xs = ['ต้นทุนต่อ กก.', 'ราคาขายที่กรอก', ...(mk ? ['ราคาตลาดเฉลี่ย (สศก.)'] : []), 'ส่วนต่างต่อ กก.'];
-    const ys = [beP, p, ...(mk ? [mk] : []), m];
+    if (!ok(beP) || !ok(p)) { empty($('margin'), 'กรอกต้นทุนต่อไร่ ผลผลิต และราคา (หรือกดนำค่าอ้างอิงไปใส่)'); return; }
+    const crop = PROD[+$('k-crop').value], oc = COST[crop] ? COST[crop].cost[CY.length - 1] / 1000 : null, m = p - beP;
+    const xs = ['ต้นทุนต่อ กก. (ของท่าน)', ...(ok(oc) ? ['ต้นทุนต่อ กก. (สศก.)'] : []), 'ราคาขายที่กรอก', ...(ok(REF.price) ? ['ราคาอ้างอิง'] : []), 'ส่วนต่างต่อ กก.'];
+    const ys = [beP, ...(ok(oc) ? [oc] : []), p, ...(ok(REF.price) ? [REF.price] : []), m];
     Plotly.react($('margin'), [{ type: 'bar', x: xs, y: ys, text: ys.map(v => fmt(v, 2)), textposition: 'outside', textfont: { color: C.fg }, cliponaxis: false,
-      marker: { color: [C.magenta, C.cyan, ...(mk ? [C.sky] : []), m >= 0 ? C.ok : C.bad] }, hovertemplate: '%{x}: %{y:,.2f} บาท/กก.<extra></extra>' }],
-      layout({ bargap: 0.45, margin: { l: 10, r: 10, t: 20, b: 30 }, yaxis: axis('บาท/กก.') }), CFG);
+      marker: { color: [C.magenta, ...(ok(oc) ? ['#9C6ADE'] : []), C.cyan, ...(ok(REF.price) ? [C.sky] : []), m >= 0 ? C.ok : C.bad] }, hovertemplate: '%{x}: %{y:,.2f} บาท/กก.<extra></extra>' }],
+      layout({ bargap: 0.4, margin: { l: 10, r: 10, t: 20, b: 30 }, yaxis: axis('บาท/กก.') }), CFG);
   }
 
   // ---------- render ----------
   function render() {
-    $('f-year').value = String(S.year); $('f-region').value = S.region; $('f-province').value = String(S.province);
+    $('f-product').value = String(S.product); $('f-year').value = String(S.year); $('f-region').value = S.region; $('f-province').value = String(S.province); $('f-metric').value = S.metric;
+    drawBadges();
     if (S.tab === 'overview') renderOverview(); else if (S.tab === 'climate') renderClimate(); else if (S.tab === 'factors') renderFactors(); else renderEconomics();
   }
+  syncCrops();
   const start = (location.hash || '').replace('#', '');
   setTab(TABS.includes(start) ? start : 'overview');
 })();

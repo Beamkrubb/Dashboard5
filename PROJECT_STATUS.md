@@ -34,3 +34,15 @@ _Last updated: 2026-10-23_
 ## Open issues
 - `src/` package imported by `app.py` is **not in the repo** (`src.data_loader`, `src.visualizations`, …). The app cannot run until it is restored or rebuilt. When restored, `src/visualizations.py` should `from src.theme import COLOR_*, MAP_SCALE, style_*` and drop its own colour constants / `plotly_white` templates.
 - Build sandbox had no network (PyPI, GitHub, gov portals blocked): Streamlit run, Plotly tests and data download must be done on a machine with internet.
+
+## Web dashboard v4 — objectives 1–7 (2026-10-24)
+| Objective | Status | Data used |
+|---|---|---|
+| 1. 77 provinces × 26 crops, shortcuts | ✅ | OAE `production_y_oae.csv` (data.go.th oae0001) 2550–2562, 10,656 province rows; rubber/oil palm 2562 filled from OAE Catalog province files (145 rows, flagged on page) |
+| 2–3. Shared global filters, Reset, active-filter badges | ✅ | Region → Province (dynamic), Crop (26, grouped + 4 shortcut chips), Year 2550–2562, Metric; × on each badge resets that filter |
+| 4. Choropleth + trend | ✅ | Overview map + 2550–2562 trend follow all filters |
+| 5. Climate vs yield | ✅ | HII IDW rain 2561–2562 (77), May–Oct season rain, HII monthly temperature 2561–2562 (64–65 provinces), ERA5 2550–2562; Pearson/Spearman/p/N + OLS. TMD stations: registration required → empty state |
+| 6. Production drivers | ✅ | RID GIS `virrarea_all` (599 large/medium projects) rasterised per province (`web/rid_grid.py`, 23.9 M rai); NSO census machinery/fertiliser/holding land; Agri-Map; DDPM 2562; DOAE in vs out irrigation-zone affected area (year not stated in source) |
+| 7. Farm economics | ✅ | NABC weekly prices; OAE cost/price/net per ton 2565–2567 for 21 of 26 crops (transcribed from the OAE 2567 commodity PDF, `data/interim/oae_cost_2567.json`, every row checked net = price − cost); OAE household cash-expense structure (labelled as household, not per-crop); calculator separates farmer inputs from government benchmarks |
+
+Known gaps (shown as "ไม่มีข้อมูล"): OAE cost for มะนาว, มะเขือเทศ, หน่อไม้ฝรั่ง, ข้าวโพดหวาน, ข้าวโพดฝักอ่อน; per-crop cost breakdown (fertiliser/labour) is not published as open data; HII temperature misses ~12 provinces; OCSB sugarcane download failed (not in the 26-crop set).

@@ -129,4 +129,16 @@ th.sort[aria-sort="ascending"]::after { content: " ▲"; } th.sort[aria-sort="de
 .ref { display: grid; gap: 8px; }
 .ref div { display: flex; justify-content: space-between; gap: 10px; border-bottom: 1px dashed var(--line); padding-bottom: 6px; font-size: 13.5px; }
 .ref b { color: var(--fg); font-variant-numeric: tabular-nums; text-align: right; }
+.filterbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; display: grid; gap: 8px; padding: 12px 14px; border-radius: var(--r);
+  background: rgba(10,13,36,0.9); backdrop-filter: blur(10px); border: 1px solid var(--line); }
+.filterbar .filters { position: static; padding: 0; background: none; border: 0; backdrop-filter: none; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); align-items: end; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12.5px; }
+.chips > span.lbl { color: var(--muted); margin-right: 2px; }
+.sc { background: var(--input); border: 1px solid rgba(0,229,255,0.28); color: var(--cyan); border-radius: 999px; padding: 4px 12px; font: 500 13px var(--body); cursor: pointer; }
+.sc[aria-pressed="true"] { background: var(--grad-c); color: #0A0D24; border-color: transparent; }
+.fb { display: inline-flex; align-items: center; gap: 6px; background: rgba(224,64,251,0.14); color: var(--fg); border-radius: 999px; padding: 3px 4px 3px 10px; }
+.fb b { font-weight: 500; color: var(--fg-2); }
+.fb button { background: rgba(255,255,255,0.1); border: 0; color: #fff; width: 20px; height: 20px; border-radius: 50%; cursor: pointer; line-height: 1; font-size: 13px; }
+.fb.def { background: rgba(255,255,255,0.05); color: var(--fg-2); padding-right: 10px; }
+#f-reset { height: 38px; }
 </style>

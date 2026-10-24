@@ -1,0 +1,387 @@
+{
+"พะเยา": {
+"prov_rai": 3885972,
+"irr_rai": 109670,
+"irr_large_rai": 17532
+},
+"เชียงราย": {
+"prov_rai": 7278373,
+"irr_rai": 348970,
+"irr_large_rai": 142259
+},
+"แพร่": {
+"prov_rai": 4064318,
+"irr_rai": 278082,
+"irr_large_rai": 200123
+},
+"น่าน": {
+"prov_rai": 7636581,
+"irr_rai": 46924,
+"irr_large_rai": 0
+},
+"ตาก": {
+"prov_rai": 10871412,
+"irr_rai": 62981,
+"irr_large_rai": 0
+},
+"สุโขทัย": {
+"prov_rai": 4196526,
+"irr_rai": 496544,
+"irr_large_rai": 142895
+},
+"อุทัยธานี": {
+"prov_rai": 4178037,
+"irr_rai": 167249,
+"irr_large_rai": 167249
+},
+"กำแพงเพชร": {
+"prov_rai": 5349947,
+"irr_rai": 1283117,
+"irr_large_rai": 493646
+},
+"นครสวรรค์": {
+"prov_rai": 5986974,
+"irr_rai": 486762,
+"irr_large_rai": 154648
+},
+"เพชรบูรณ์": {
+"prov_rai": 7753260,
+"irr_rai": 85353,
+"irr_large_rai": 0
+},
+"พิษณุโลก": {
+"prov_rai": 6649470,
+"irr_rai": 544041,
+"irr_large_rai": 446840
+},
+"พิจิตร": {
+"prov_rai": 2714600,
+"irr_rai": 641047,
+"irr_large_rai": 398566
+},
+"นครราชสีมา": {
+"prov_rai": 13017325,
+"irr_rai": 818265,
+"irr_large_rai": 732299
+},
+"บุรีรัมย์": {
+"prov_rai": 6302741,
+"irr_rai": 295189,
+"irr_large_rai": 220416
+},
+"สมุทรสาคร": {
+"prov_rai": 542835,
+"irr_rai": 188951,
+"irr_large_rai": 188951
+},
+"สมุทรสงคราม": {
+"prov_rai": 255412,
+"irr_rai": 79851,
+"irr_large_rai": 79851
+},
+"สุพรรณบุรี": {
+"prov_rai": 3397306,
+"irr_rai": 1622775,
+"irr_large_rai": 1617534
+},
+"นครปฐม": {
+"prov_rai": 1343376,
+"irr_rai": 877247,
+"irr_large_rai": 877247
+},
+"ราชบุรี": {
+"prov_rai": 3264230,
+"irr_rai": 676691,
+"irr_large_rai": 657107
+},
+"บึงกาฬ": {
+"prov_rai": 2506004,
+"irr_rai": 1473,
+"irr_large_rai": 0
+},
+"กาญจนบุรี": {
+"prov_rai": 12212071,
+"irr_rai": 376442,
+"irr_large_rai": 369699
+},
+"หนองบัวลำภู": {
+"prov_rai": 2574987,
+"irr_rai": 5911,
+"irr_large_rai": 0
+},
+"ลพบุรี": {
+"prov_rai": 4091587,
+"irr_rai": 571016,
+"irr_large_rai": 497032
+},
+"ชัยภูมิ": {
+"prov_rai": 7965542,
+"irr_rai": 176557,
+"irr_large_rai": 147522
+},
+"สิงห์บุรี": {
+"prov_rai": 510426,
+"irr_rai": 394417,
+"irr_large_rai": 394417
+},
+"พระนครศรีอยุธยา": {
+"prov_rai": 1599012,
+"irr_rai": 1208791,
+"irr_large_rai": 1208791
+},
+"อำนาจเจริญ": {
+"prov_rai": 2053701,
+"irr_rai": 48431,
+"irr_large_rai": 0
+},
+"อ่างทอง": {
+"prov_rai": 595037,
+"irr_rai": 463885,
+"irr_large_rai": 463885
+},
+"อุบลราชธานี": {
+"prov_rai": 9715382,
+"irr_rai": 310204,
+"irr_large_rai": 250369
+},
+"ยโสธร": {
+"prov_rai": 2578818,
+"irr_rai": 117849,
+"irr_large_rai": 93305
+},
+"นนทบุรี": {
+"prov_rai": 403689,
+"irr_rai": 201440,
+"irr_large_rai": 201440
+},
+"สุรินทร์": {
+"prov_rai": 5546408,
+"irr_rai": 193036,
+"irr_large_rai": 74722
+},
+"ปทุมธานี": {
+"prov_rai": 945126,
+"irr_rai": 507077,
+"irr_large_rai": 507077
+},
+"กรุงเทพมหานคร": {
+"prov_rai": 986948,
+"irr_rai": 163941,
+"irr_large_rai": 163941
+},
+"ศรีสะเกษ": {
+"prov_rai": 5567433,
+"irr_rai": 211691,
+"irr_large_rai": 120283
+},
+"สมุทรปราการ": {
+"prov_rai": 597729,
+"irr_rai": 210028,
+"irr_large_rai": 210028
+},
+"เพชรบุรี": {
+"prov_rai": 3894092,
+"irr_rai": 535734,
+"irr_large_rai": 502490
+},
+"ประจวบคีรีขันธ์": {
+"prov_rai": 4052225,
+"irr_rai": 278633,
+"irr_large_rai": 221055
+},
+"อุดรธานี": {
+"prov_rai": 6912927,
+"irr_rai": 171509,
+"irr_large_rai": 141194
+},
+"เลย": {
+"prov_rai": 6597956,
+"irr_rai": 14784,
+"irr_large_rai": 0
+},
+"ชลบุรี": {
+"prov_rai": 2838303,
+"irr_rai": 106939,
+"irr_large_rai": 12049
+},
+"ขอนแก่น": {
+"prov_rai": 6676135,
+"irr_rai": 193825,
+"irr_large_rai": 178210
+},
+"ระนอง": {
+"prov_rai": 2033609,
+"irr_rai": 0,
+"irr_large_rai": 0
+},
+"ชุมพร": {
+"prov_rai": 3784348,
+"irr_rai": 0,
+"irr_large_rai": 0
+},
+"ภูเก็ต": {
+"prov_rai": 349763,
+"irr_rai": 0,
+"irr_large_rai": 0
+},
+"สุราษฎร์ธานี": {
+"prov_rai": 8238232,
+"irr_rai": 123141,
+"irr_large_rai": 0
+},
+"กระบี่": {
+"prov_rai": 3348933,
+"irr_rai": 41392,
+"irr_large_rai": 3830
+},
+"มุกดาหาร": {
+"prov_rai": 2570835,
+"irr_rai": 36357,
+"irr_large_rai": 0
+},
+"พังงา": {
+"prov_rai": 2876477,
+"irr_rai": 37482,
+"irr_large_rai": 0
+},
+"สระแก้ว": {
+"prov_rai": 4275423,
+"irr_rai": 87935,
+"irr_large_rai": 0
+},
+"สกลนคร": {
+"prov_rai": 5988186,
+"irr_rai": 318675,
+"irr_large_rai": 212962
+},
+"นครศรีธรรมราช": {
+"prov_rai": 6210281,
+"irr_rai": 779493,
+"irr_large_rai": 624054
+},
+"นครพนม": {
+"prov_rai": 3510101,
+"irr_rai": 78494,
+"irr_large_rai": 42961
+},
+"ปราจีนบุรี": {
+"prov_rai": 3158635,
+"irr_rai": 426902,
+"irr_large_rai": 284131
+},
+"ร้อยเอ็ด": {
+"prov_rai": 4915649,
+"irr_rai": 201135,
+"irr_large_rai": 154981
+},
+"นครนายก": {
+"prov_rai": 1343916,
+"irr_rai": 500988,
+"irr_large_rai": 463447
+},
+"กาฬสินธุ์": {
+"prov_rai": 4330236,
+"irr_rai": 422732,
+"irr_large_rai": 321793
+},
+"ตราด": {
+"prov_rai": 1799387,
+"irr_rai": 109715,
+"irr_large_rai": 0
+},
+"หนองคาย": {
+"prov_rai": 2052863,
+"irr_rai": 61924,
+"irr_large_rai": 49387
+},
+"ฉะเชิงเทรา": {
+"prov_rai": 3245189,
+"irr_rai": 975766,
+"irr_large_rai": 865125
+},
+"มหาสารคาม": {
+"prov_rai": 3502850,
+"irr_rai": 225403,
+"irr_large_rai": 167329
+},
+"ระยอง": {
+"prov_rai": 2308344,
+"irr_rai": 173687,
+"irr_large_rai": 139692
+},
+"จันทบุรี": {
+"prov_rai": 4022716,
+"irr_rai": 169195,
+"irr_large_rai": 0
+},
+"ชัยนาท": {
+"prov_rai": 1570817,
+"irr_rai": 663164,
+"irr_large_rai": 601127
+},
+"สระบุรี": {
+"prov_rai": 2194264,
+"irr_rai": 428886,
+"irr_large_rai": 420639
+},
+"ลำปาง": {
+"prov_rai": 7854795,
+"irr_rai": 131706,
+"irr_large_rai": 107358
+},
+"อุตรดิตถ์": {
+"prov_rai": 4945845,
+"irr_rai": 130653,
+"irr_large_rai": 739
+},
+"เชียงใหม่": {
+"prov_rai": 13850449,
+"irr_rai": 391351,
+"irr_large_rai": 281504
+},
+"ลำพูน": {
+"prov_rai": 2808190,
+"irr_rai": 145370,
+"irr_large_rai": 55780
+},
+"นราธิวาส": {
+"prov_rai": 2825928,
+"irr_rai": 211704,
+"irr_large_rai": 167839
+},
+"ปัตตานี": {
+"prov_rai": 1254517,
+"irr_rai": 398413,
+"irr_large_rai": 390721
+},
+"ยะลา": {
+"prov_rai": 2814299,
+"irr_rai": 13079,
+"irr_large_rai": 13079
+},
+"ตรัง": {
+"prov_rai": 2984438,
+"irr_rai": 118987,
+"irr_large_rai": 0
+},
+"พัทลุง": {
+"prov_rai": 2426402,
+"irr_rai": 381600,
+"irr_large_rai": 113647
+},
+"สงขลา": {
+"prov_rai": 4905882,
+"irr_rai": 527606,
+"irr_large_rai": 353891
+},
+"แม่ฮ่องสอน": {
+"prov_rai": 8043613,
+"irr_rai": 12503,
+"irr_large_rai": 0
+},
+"สตูล": {
+"prov_rai": 1900974,
+"irr_rai": 37690,
+"irr_large_rai": 0
+}
+}
