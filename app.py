@@ -276,7 +276,13 @@ df_disaster = data_dict["disaster"]
 
 # Initialize Session State
 available_years = sorted(df_ag["year"].dropna().unique().astype(int).tolist())
-latest_year = int(max(available_years)) if available_years else 2562
+_yrs_per_product = df_ag.groupby("year")["product"].nunique() if not df_ag.empty else pd.Series(dtype=int)
+_complete_years = _yrs_per_product[_yrs_per_product == _yrs_per_product.max()].index.tolist() if not _yrs_per_product.empty else []
+latest_year = int(max(_complete_years)) if _complete_years else (int(max(available_years)) if available_years else 2562)
+n_products = int(df_ag["product"].nunique()) if not df_ag.empty else 0
+climate_years = sorted(df_rain_annual["year"].unique().tolist()) if not df_rain_annual.empty else []
+rain_source_label = ("ERA5 reanalysis (Open-Meteo) แทนข้อมูล สสน." if (not df_rain_annual.empty and df_rain_annual["source_id"].astype(str).str.endswith("ERA5").all())
+                     else "สสน. HII (IDW)")
 init_session_state(default_year=latest_year)
 
 
@@ -301,12 +307,12 @@ with st.sidebar:
     st.markdown("---")
     st.markdown("#### 🛡️ ธรรมาภิบาลข้อมูล (Data Governance)")
     st.markdown(
-        f"- **สถิติการผลิตการเกษตร:** สศก. พ.ศ. {min(available_years)}–{max(available_years)} (77 จังหวัด 26 ชนิดพืช)\n"
-        f"- **ฝนเชิงพื้นที่รายจังหวัด:** สสน. HII (IDW) พ.ศ. 2561–2562\n"
-        f"- **สภาพอากาศเกษตรรายวัน:** กรมอุตุนิยมวิทยา TMD Open Data\n"
-        f"- **ราคาหน้าฟาร์ม:** สศก. & NABC พ.ศ. 2561–2562\n"
-        f"- **ชลประทาน & ดิน:** กรมชลประทาน & กรมพัฒนาที่ดิน (Agri-Map)\n"
-        f"- **ข้อมูลจำลอง (Mock):** ❌ ห้ามใช้เด็ดขาด (Real Open Data 100%)"
+        f"- **สถิติการผลิตการเกษตร:** สศก. พ.ศ. {min(available_years)}–{max(available_years)} ({df_ag['province'].nunique()} จังหวัด, {n_products} ชนิดพืช)\n"
+        f"- **ฝนรายจังหวัด:** {rain_source_label} พ.ศ. {', '.join(map(str, climate_years)) or 'ไม่มีข้อมูล'}\n"
+        f"- **สภาพอากาศรายวัน TMD:** {'มีแคช' if not df_agromet.empty else 'ยังไม่ได้เชื่อมต่อ (ต้องลงทะเบียน API)'}\n"
+        f"- **ราคาหน้าฟาร์ม:** สศก. & NABC {('พ.ศ. ' + str(df_prices['year'].min()) + '–' + str(df_prices['year'].max())) if not df_prices.empty else 'ไม่มีข้อมูล'}\n"
+        f"- **ดิน Agri-Map:** กรมพัฒนาที่ดิน {'✅' if not df_soil.empty else '—'} · **ชลประทาน:** {'✅' if not df_irrig.empty else 'ยังไม่มีไฟล์'} · **ภัยพิบัติ:** {'✅' if not df_disaster.empty else 'ยังไม่มีไฟล์'}\n"
+        f"- **ข้อมูลจำลอง (Mock):** ไม่ใช้ — ชุดที่ยังไม่มีไฟล์จะแสดงว่า 'ไม่มีข้อมูล'"
     )
 
     with st.expander("📖 รายละเอียดแหล่งข้อมูล (Data Sources)"):
@@ -658,7 +664,7 @@ with tab1:
                 st.info("ไม่พบไฟล์แผนที่ GeoJSON สำหรับการแสดงผลแผนที่ประเทศไทย")
 
         with col_chart:
-            st.markdown(f"#### 📈 แนวโน้มประวัติศาสตร์ตามตัวชี้วัด (พ.ศ. 2550–2562)")
+            st.markdown(f"#### 📈 แนวโน้มประวัติศาสตร์ตามตัวชี้วัด (พ.ศ. {min(available_years)}–{max(available_years)})")
             if not df_trend_series.empty:
                 trend_agg = df_trend_series.groupby("year").agg(
                     production_ton=("production_ton", "sum"),
@@ -682,7 +688,7 @@ with tab1:
                     x_col="year",
                     y_col=st.session_state.selected_metric,
                     color_col=None,
-                    title=f"แนวโน้ม {sel_metric_title} (พ.ศ. 2550–2562)",
+                    title=f"แนวโน้ม {sel_metric_title} (พ.ศ. {min(available_years)}–{max(available_years)})",
                     y_label=sel_metric_title,
                     unit=sel_metric_unit
                 )
@@ -809,8 +815,11 @@ with tab2:
     st.markdown("### 🌦️ ภูมิอากาศ คำแนะนำการเพาะปลูก และการบริหารความเสี่ยง (Climate & Crop Advisory)")
     st.caption("บูรณาการข้อมูลตรวจวัดจริงของ สสน. HII (IDW 77 จังหวัด) และ กรมอุตุนิยมวิทยา TMD รายวัน เพื่อให้เกษตรกรตัดสินใจเพาะปลูกและเตรียมรับมือความเสี่ยง")
 
-    target_climate_year = st.session_state.selected_year if st.session_state.selected_year in [2561, 2562] else 2562
-    active_crop = st.session_state.selected_product if st.session_state.selected_product != "ทั้งหมด" else "ข้าวนาปี"
+    target_climate_year = st.session_state.selected_year if st.session_state.selected_year in climate_years else (max(climate_years) if climate_years else 2562)
+    default_crop = "ข้าวนาปี" if "ข้าวนาปี" in all_products else (all_products[1] if len(all_products) > 1 else "ข้าวนาปี")
+    active_crop = st.session_state.selected_product if st.session_state.selected_product != "ทั้งหมด" else default_crop
+    if target_climate_year != st.session_state.selected_year:
+        st.info(f"ℹ️ ข้อมูลฝนรายจังหวัดมีเฉพาะปี พ.ศ. {', '.join(map(str, climate_years)) or '—'} จึงแสดงปี พ.ศ. {target_climate_year} ({rain_source_label})")
     active_prov = st.session_state.selected_province
 
     # Extract climate variables for active province if available
@@ -1337,8 +1346,8 @@ with tab4:
     st.markdown("### 🚜 ผลผลิตและเศรษฐศาสตร์ฟาร์ม (Production Drivers & Farm Economics)")
     st.caption("วิเคราะห์ปัจจัยขับเคลื่อนผลผลิต (ระบบชลประทาน, ดิน Agri-Map, ต้นทุนเครื่องจักรกล, ภัยธรรมชาติ) และเครื่องคำนวณกำไรสุทธิฟาร์ม")
 
-    driver_crop = st.session_state.selected_product if st.session_state.selected_product != "ทั้งหมด" else "ข้าวนาปี"
-    driver_year = st.session_state.selected_year if st.session_state.selected_year in [2561, 2562] else 2562
+    driver_crop = st.session_state.selected_product if st.session_state.selected_product != "ทั้งหมด" else default_crop
+    driver_year = st.session_state.selected_year
     driver_prov = st.session_state.selected_province
 
     # 2-Column Layout: Left = Production Driver Map | Right = Drivers & Calculator (Requirement B & C)
@@ -1439,19 +1448,27 @@ with tab4:
             st.caption("คำนวณกำไรสุทธิ จุดคุ้มทุนด้านผลผลิต และจุดคุ้มทุนด้านราคา โดยแยกช่องกรอกของผู้ใช้ออกจากเกณฑ์อ้างอิงภาครัฐ")
 
             # Government benchmark reference values
-            cost_bench = df_cost[df_cost["crop"] == driver_crop]
-            default_cost_rai = float(cost_bench["total_cost_rai"].values[0]) if not cost_bench.empty else 4500.0
-            default_yield_rai = float(cost_bench["benchmark_yield_kg_rai"].values[0]) if (not cost_bench.empty and "benchmark_yield_kg_rai" in cost_bench.columns) else 450.0
+            cost_bench = df_cost[df_cost["crop"] == driver_crop] if "crop" in df_cost.columns else pd.DataFrame()
+            has_cost = not cost_bench.empty and pd.notna(cost_bench["total_cost_rai"].values[0])
+            nat_rows = apply_ag_filters(df_ag, year=driver_year, product=driver_crop)
+            nat_yield = aggregate_agricultural_kpis(nat_rows)["weighted_yield_kg_rai"] if not nat_rows.empty else np.nan
+            has_yield = pd.notna(nat_yield)
+            price_sub = df_prices[df_prices["product"] == driver_crop] if "product" in df_prices.columns else pd.DataFrame()
+            has_price = not price_sub.empty
 
-            price_sub = df_prices[df_prices["product"] == driver_crop]
-            default_price_kg = float(price_sub["price_baht_per_kg"].mean()) if not price_sub.empty else 10.50
+            default_cost_rai = float(cost_bench["total_cost_rai"].values[0]) if has_cost else 4500.0
+            default_yield_rai = float(nat_yield) if has_yield else 450.0
+            default_price_kg = float(price_sub["price_baht_per_kg"].mean()) if has_price else 10.50
+
+            def _ref(ok, text):
+                return f"<b>{text}</b>" if ok else "<i>ไม่มีข้อมูลทางการ — ช่องด้านล่างเป็นค่าตั้งต้นให้ท่านแก้ไข</i>"
 
             st.markdown(f"""
             <div class="callout callout-note">
-                <b>📌 ค่าอ้างอิงเฉลี่ยภาครัฐ (สศก. สำหรับ {driver_crop}):</b> 
-                ต้นทุนเฉลี่ย: <b>{default_cost_rai:,.0f} บาท/ไร่</b> | 
-                ผลผลิตเฉลี่ย: <b>{default_yield_rai:,.0f} กก./ไร่</b> | 
-                ราคาหน้าฟาร์มเฉลี่ย: <b>{default_price_kg:,.2f} บาท/กก.</b>
+                <b>📌 ค่าอ้างอิงจากข้อมูลที่โหลด ({driver_crop}, พ.ศ. {driver_year}):</b><br>
+                ต้นทุนเฉลี่ย (สศก.): {_ref(has_cost, f"{default_cost_rai:,.0f} บาท/ไร่")} |
+                ผลผลิตต่อไร่ถ่วงน้ำหนักทั้งประเทศ (สศก.): {_ref(has_yield, f"{default_yield_rai:,.0f} กก./ไร่")} |
+                ราคาหน้าฟาร์มเฉลี่ย: {_ref(has_price, f"{default_price_kg:,.2f} บาท/กก.")}
             </div>
             """, unsafe_allow_html=True)
 

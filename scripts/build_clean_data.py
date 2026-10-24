@@ -77,7 +77,7 @@ def build_prices(report: dict) -> None:
         except ValueError as e:
             report["D02"][f.name] = {"error": str(e)}
     if parts:
-        _write(pd.concat(parts, ignore_index=True), "farmgate_weekly.csv", report)
+        _write(pd.concat([p for p in parts if not p.empty], ignore_index=True), "farmgate_weekly.csv", report)
     else:
         report["skipped"].append("D02")
 
@@ -125,7 +125,8 @@ def build_climate(report: dict) -> None:
                 except ValueError as e:
                     report["D07"][f"tmax_tmin.csv:{col}"] = {"error": str(e)}
     th = dict(zip(lookup_frame()["pro_code"], lookup_frame()["province_th"]))
-    for f in sorted((RAW / "ERA5" / "2018").glob("*.json")):
+    era5_files = [f for d in sorted((RAW / "ERA5").glob("[12][0-9][0-9][0-9]")) for f in sorted(d.glob("*.json"))]
+    for f in era5_files:
         payload = json.loads(f.read_text(encoding="utf-8"))
         parts.append(T.tidy_open_meteo_daily(payload, f.stem, th.get(f.stem), sources.OPEN_METEO_ARCHIVE))
     if parts:

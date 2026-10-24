@@ -148,6 +148,8 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--only", nargs="*", help="dataset IDs, e.g. D01 D05")
     ap.add_argument("--era5-2018", action="store_true", help="fetch 2018 daily rain per province (D07 gap)")
+    ap.add_argument("--era5-years", nargs="*", type=int, default=[],
+                    help="fetch daily rain per province for these C.E. years, e.g. 2018 2019")
     ap.add_argument("--era5-longterm", action="store_true", help="fetch 1970–2025 daily rain per province (D08)")
     args = ap.parse_args(argv)
     wanted = set(args.only or [d.id for d in sources.DATASETS])
@@ -166,8 +168,9 @@ def main(argv=None) -> int:
             download_static(ds, manifest)
         if ds.id == "D10":
             build_lookup(manifest)
-    if args.era5_2018:
-        download_era5("2018-01-01", "2018-12-31", "2018", manifest)
+    years = sorted(set(args.era5_years) | ({2018} if args.era5_2018 else set()))
+    for y in years:
+        download_era5(f"{y}-01-01", f"{y}-12-31", str(y), manifest)
     if args.era5_longterm:
         download_era5("1970-01-01", "2025-12-31", "1970_2025", manifest)
 
