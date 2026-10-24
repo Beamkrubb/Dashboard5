@@ -420,7 +420,7 @@
       { x: MN, y: mon.map(v => v[1]), name: 'อุณหภูมิ (°C)', yaxis: 'y2', mode: 'lines+markers', line: { color: C.magenta, width: 2.5, shape: 'spline' }, marker: { size: 5 }, hovertemplate: '%{x}: %{y:.1f} °C<extra></extra>' },
     ], layout({ showlegend: true, legend: { orientation: 'h', y: 1.0, yanchor: 'bottom', x: 0, font: { color: C.fg2, size: 11 } }, margin: { l: 10, r: 10, t: 26, b: 26 }, bargap: 0.25,
       shapes: [{ type: 'rect', xref: 'x', yref: 'paper', x0: 3.5, x1: 9.5, y0: 0, y1: 1, fillcolor: 'rgba(0,229,160,0.06)', line: { width: 0 } }],
-      xaxis: axis(null, { tickangle: 0, tickfont: { size: 10, color: C.muted } }), yaxis: axis('มม.', { rangemode: 'tozero' }), yaxis2: axis('°C', { overlaying: 'y', side: 'right', showgrid: false, tickformat: '.0f' }) }), CFG);
+      xaxis: axis(null, { tickfont: { size: 10, color: C.muted } }), yaxis: axis('มม.', { rangemode: 'tozero' }), yaxis2: axis('°C', { overlaying: 'y', side: 'right', showgrid: false, tickformat: '.0f' }) }), CFG);
   }
 
   // =================== TAB 3 ===================
