@@ -9,3 +9,4 @@ data/cache/
 Thumbs.db
 run_log.txt
 smoke_log.txt
+fetch_log.txt
