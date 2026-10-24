@@ -1,0 +1,143 @@
+<div class="app">
+  <header class="top">
+    <div class="brand"><div class="logo" aria-hidden="true">ก</div>
+      <div><h1>ระบบวิเคราะห์การผลิตสินค้าเกษตรและภูมิอากาศไทย</h1><small id="coverage"></small></div></div>
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" id="t-overview" data-tab="overview">📊 ภาพรวมการผลิต</button>
+      <button class="tab" role="tab" id="t-climate" data-tab="climate">🌦️ สภาพอากาศ</button>
+      <button class="tab" role="tab" id="t-factors" data-tab="factors">🚜 ปัจจัยการผลิต</button>
+      <button class="tab" role="tab" id="t-economics" data-tab="economics">💰 ราคา ต้นทุน</button>
+    </div>
+    <button class="iconbtn" id="open-src" type="button">แหล่งข้อมูล</button>
+  </header>
+
+  <nav class="filters" aria-label="ตัวกรองหลัก ใช้ร่วมกันทุกแท็บ">
+    <label>ภาค <select id="f-region"></select></label>
+    <label>จังหวัด <select id="f-province"></select></label>
+    <label>พืช <select id="f-product"></select></label>
+    <label>ปี <select id="f-year"></select></label>
+    <label>ตัวชี้วัด <select id="f-metric"></select></label>
+    <span class="sep" aria-hidden="true"></span>
+    <span id="shortcuts" class="mini" aria-label="ทางลัดพืชหลัก"></span>
+    <div class="badges" id="badges" aria-live="polite"></div>
+    <button class="btn ghost" id="f-reset" type="button">↺ รีเซ็ต</button>
+  </nav>
+
+  <main class="main" id="main">
+    <!-- LEFT: map (layer depends on tab) -->
+    <section class="card mapcard" aria-labelledby="map-title">
+      <div class="card-h"><h2 id="map-title">แผนที่</h2>
+        <details class="info"><summary aria-label="คำอธิบายแผนที่">i</summary><div class="pop" id="map-info"></div></details></div>
+      <div class="seg" id="map-layers" role="group" aria-label="ชั้นข้อมูลแผนที่"></div>
+      <div class="sub" id="map-sub"></div>
+      <div class="chart" id="map"></div>
+      <div class="hint"><b>คลิกจังหวัด</b> บนแผนที่ อันดับ หรือตาราง เพื่อเปิดรายละเอียดด้านขวา</div>
+    </section>
+
+    <!-- CENTRE -->
+    <section class="center">
+      <div class="kpis" id="kpis"></div>
+
+      <!-- TAB 1 -->
+      <div class="panel" id="p-overview">
+        <div class="card"><div class="card-h"><h2 id="trend-title">แนวโน้ม</h2><button class="x" data-exp title="ขยาย">⤢</button></div><div class="sub" id="trend-sub"></div><div class="chart" id="trend"></div></div>
+        <div class="card"><div class="card-h"><h2 id="rank-title">อันดับจังหวัด</h2>
+            <div class="seg" role="group" aria-label="สูงสุดหรือต่ำสุด"><button id="rk-top" aria-pressed="true">สูงสุด 10</button><button id="rk-bot" aria-pressed="false">ต่ำสุด 10</button></div>
+            <button class="x" data-exp title="ขยาย">⤢</button></div>
+          <div class="sub" id="rank-sub"></div><div class="chart" id="rank"></div></div>
+        <div class="card"><div class="card-h"><h2>ขนาดพื้นที่ vs ผลผลิตต่อไร่</h2>
+            <details class="info"><summary aria-label="ข้อสังเกต">i</summary><div class="pop" id="scale-insight"></div></details><button class="x" data-exp title="ขยาย">⤢</button></div>
+          <div class="sub" id="scale-sub"></div><div class="chart" id="scale"></div></div>
+        <div class="card"><div class="card-h"><h2>ตารางรายจังหวัด</h2>
+            <details class="info"><summary aria-label="นิยาม">i</summary><div class="pop" id="basis-note"></div></details><button class="x" data-exp title="ขยาย">⤢</button></div>
+          <div class="tools"><input type="search" id="t-search" placeholder="ค้นหาจังหวัด ภาค พืช" aria-label="ค้นหาในตาราง"><button class="btn" id="t-csv" hidden>CSV</button></div>
+          <div class="sub" id="table-sub"></div>
+          <div class="tablewrap"><table id="table"></table></div></div>
+      </div>
+
+      <!-- TAB 2 -->
+      <div class="panel" id="p-climate" hidden>
+        <div class="card"><div class="card-h"><h2 id="scatter-title">สภาพอากาศ vs ผลผลิตต่อไร่</h2>
+            <span class="mini"><select id="c-x" aria-label="ตัวแปรสภาพอากาศ"></select></span><button class="x" data-exp title="ขยาย">⤢</button></div>
+          <div class="sub" id="scatter-sub"></div><div class="chart" id="scatter"></div><div class="stats" id="stats"></div></div>
+        <div class="card"><div class="card-h"><h2>ฝนทั้งประเทศ พ.ศ. 2550–2562</h2>
+            <details class="info"><summary aria-label="ที่มา">i</summary><div class="pop">สสน. ฝนเชิงพื้นที่ทั้งประเทศรายเดือน รวมเป็นรายปี · เส้นประ = ค่าเฉลี่ย พ.ศ. 2534–2563 · แท่งชมพู = ปีที่เลือก</div></details><button class="x" data-exp title="ขยาย">⤢</button></div>
+          <div class="sub" id="nat-sub"></div><div class="chart" id="national"></div></div>
+        <div class="card"><div class="card-h"><h2 id="season-title">ฝนฤดูเพาะปลูก พ.ค.–ต.ค.</h2><button class="x" data-exp title="ขยาย">⤢</button></div><div class="sub" id="season-sub"></div><div class="chart" id="season"></div></div>
+        <div class="card"><div class="card-h"><h2 id="station-title">สถานีอากาศทดแทน: ฝนและอุณหภูมิรายเดือน</h2>
+            <details class="info"><summary aria-label="ทำไมเป็นข้อมูลทดแทน">i</summary><div class="pop"><b>ทดแทนข้อมูลสถานีของกรมอุตุนิยมวิทยา:</b> API ของกรมอุตุฯ ต้องใช้ uid/ukey และหน้าเว็บไม่เปิดให้ลงทะเบียนแล้ว ส่วนนี้จึงใช้ ERA5 reanalysis (Copernicus ผ่าน Open-Meteo) รายวันที่จุดศูนย์กลางจังหวัด รวมเป็นรายเดือน ครบ 77 จังหวัด พ.ศ. 2550–2562. ฝน ERA5 สูงกว่า สสน. ราว 17–21% แต่สัมพันธ์กันระหว่างจังหวัด r ≈ 0.8 (ปี 2561–2562) จึงเหมาะเปรียบเทียบระหว่างจังหวัด/เดือน ไม่ควรรวมตัวเลขกับ สสน.</div></details><button class="x" data-exp title="ขยาย">⤢</button></div>
+          <div class="sub" id="station-sub"></div><div class="chart" id="station"></div></div>
+      </div>
+
+      <!-- TAB 3 -->
+      <div class="panel" id="p-factors" hidden>
+        <div class="card"><div class="card-h"><h2 id="fsc-title">ปัจจัย vs ผลผลิตต่อไร่</h2>
+            <span class="mini"><select id="f-x" aria-label="ปัจจัย"></select></span><button class="x" data-exp title="ขยาย">⤢</button></div>
+          <div class="sub" id="fsc-sub"></div><div class="chart" id="fsc"></div><div class="stats" id="fstats"></div></div>
+        <div class="card"><div class="card-h"><h2 id="soil-title">ความเหมาะสมของดิน Agri-Map</h2>
+            <span class="mini"><select id="s-crop" aria-label="พืช Agri-Map"></select></span><button class="x" data-exp title="ขยาย">⤢</button></div>
+          <div class="sub" id="soil-sub"></div><div class="chart" id="soilbar"></div></div>
+        <div class="card"><div class="card-h"><h2 id="dis-title">ภัยพิบัติ</h2>
+            <div class="seg" role="group" aria-label="ชุดข้อมูลภัย"><button id="dv-flood" aria-pressed="true">น้ำท่วม 62</button><button id="dv-drought" aria-pressed="false">แล้ง 62</button><button id="dv-doae" aria-pressed="false">ใน/นอกชลประทาน</button></div>
+            <details class="info"><summary aria-label="ที่มา">i</summary><div class="pop" id="dis-info"></div></details><button class="x" data-exp title="ขยาย">⤢</button></div>
+          <div class="sub" id="dis-sub"></div><div class="chart" id="disbar"></div></div>
+        <div class="card"><div class="card-h"><h2>รายจ่ายเงินสดครัวเรือนเกษตร</h2>
+            <span class="mini"><select id="h-year" aria-label="ปี"></select></span>
+            <details class="info"><summary aria-label="อ่านอย่างระวัง">i</summary><div class="pop"><b>อ่านอย่างระวัง:</b> เป็นรายจ่ายเงินสดเฉลี่ยต่อครัวเรือนเกษตรทั้งประเทศ (สศก.) ไม่ใช่โครงสร้างต้นทุนรายพืชแยกปุ๋ย สารเคมี แรงงาน ซึ่ง สศก. ไม่ได้เผยแพร่เป็นไฟล์ข้อมูลเปิด ต้นทุนรวมต่อตันรายพืชอยู่ในแท็บ “ราคา ต้นทุน”</div></details><button class="x" data-exp title="ขยาย">⤢</button></div>
+          <div class="sub">ค่าเฉลี่ยทั้งประเทศ บาท/ครัวเรือน · ภาวะเศรษฐกิจครัวเรือนเกษตร</div><div class="chart" id="donut"></div></div>
+      </div>
+
+      <!-- TAB 4 -->
+      <div class="panel" id="p-economics" hidden>
+        <div class="card"><div class="card-h"><h2 id="price-title">ราคาที่เกษตรกรขายได้รายสัปดาห์</h2>
+            <span class="mini"><select id="m-product" aria-label="สินค้า"></select><select id="m-range" aria-label="ช่วงเวลา"></select></span><button class="x" data-exp title="ขยาย">⤢</button></div>
+          <div class="sub">สศก. / NABC · ราคาเฉลี่ยระดับประเทศ · เส้นประ = เฉลี่ยเคลื่อนที่ 8 สัปดาห์</div><div class="chart" id="price"></div></div>
+        <div class="card span-r"><div class="card-h"><h2>เครื่องคำนวณกำไรและจุดคุ้มทุน</h2>
+            <span class="mini"><select id="k-crop" aria-label="พืชในเครื่องคำนวณ"></select></span>
+            <details class="info"><summary aria-label="สูตรและข้อจำกัด">i</summary><div class="pop">Total Cost = Area × Cost per Rai<br>Total Yield = Area × Yield per Rai<br>Revenue = Total Yield × Sale Price<br>Profit = Revenue − Total Cost<br>Break-even Yield = Total Cost ÷ (Area × Price)<br>Break-even Price = Total Cost ÷ Total Yield<br>ต้นทุนอ้างอิงต่อไร่ = ต้นทุน สศก. (บาท/ตัน) × ผลผลิต สศก. (กก./ไร่) ÷ 1,000<br><br><b>ข้อจำกัด:</b> เป็นการประมาณการ ไม่ใช่การรับรองทางบัญชี ราคาและต้นทุนอ้างอิงเป็นค่าเฉลี่ยประเทศ ต้นทุน สศก. เป็นปี 2565–2567 ไม่ตรงช่วงผลผลิต 2550–2562</div></details></div>
+          <div class="calc">
+            <h3>① ข้อมูลของเกษตรกร (กรอกเอง)</h3>
+            <div class="ins">
+              <label>พื้นที่ (ไร่)<input type="number" id="k-area" min="1" step="1" value="20"></label>
+              <label>ผลผลิตคาดหวัง (กก./ไร่)<input type="number" id="k-yield" min="0" step="10" placeholder="กรอกเอง"></label>
+              <label>ต้นทุนต่อไร่ (บาท)<input type="number" id="k-cost" min="0" step="100" placeholder="กรอกเอง"></label>
+              <label>ราคาขาย (บาท/กก.)<input type="number" id="k-price" min="0" step="0.05" placeholder="กรอกเอง"></label>
+            </div>
+            <div class="out" id="k-out"></div>
+            <div class="card-h"><h3 style="flex:1">② เกณฑ์อ้างอิงจากหน่วยงานรัฐ</h3><button class="btn ghost" id="k-use" type="button">นำค่าอ้างอิงไปใส่</button></div>
+            <div class="ref" id="k-ref"></div>
+            <div class="chart" id="margin"></div>
+          </div></div>
+        <div class="card"><div class="card-h"><h2 id="cost-title">ต้นทุน ราคา ผลตอบแทนต่อตัน (สศก.)</h2>
+            <div class="seg" role="group" aria-label="มุมมองต้นทุน"><button id="cv-crop" aria-pressed="true">พืชนี้</button><button id="cv-all" aria-pressed="false">ทุกพืช 2567</button></div><button class="x" data-exp title="ขยาย">⤢</button></div>
+          <div class="sub" id="cost-sub"></div><div class="chart" id="costbar"></div></div>
+      </div>
+    </section>
+
+    <!-- RIGHT: province drawer -->
+    <aside class="card detail" id="detail" aria-label="รายละเอียดจังหวัด">
+      <div class="card-h"><h2 id="d-title">จังหวัด</h2><button class="x" id="d-close" aria-label="ปิดรายละเอียดจังหวัด">✕</button></div>
+      <div class="sub" id="d-sub"></div>
+      <div class="body" id="d-body"></div>
+    </aside>
+  </main>
+</div>
+<div class="backdrop" id="backdrop" hidden></div>
+
+<dialog id="src">
+  <div class="card-h"><h2 style="flex:1">แหล่งข้อมูล</h2><button class="x" id="src-close" aria-label="ปิด">✕</button></div>
+  <ul>
+    <li><a href="https://data.go.th/dataset/oae0001" target="_blank" rel="noopener">สศก. — การผลิตสินค้าเกษตรรายจังหวัด 26 ชนิด พ.ศ. 2550–2562</a>; ยางพาราและปาล์มน้ำมันปี 2562 เติมจาก <a href="https://catalog.oae.go.th/group/production" target="_blank" rel="noopener">OAE Catalog รายจังหวัด</a></li>
+    <li><a href="https://catalog.oae.go.th/group/price" target="_blank" rel="noopener">สศก. / NABC — ราคาที่เกษตรกรขายได้รายสัปดาห์</a></li>
+    <li><a href="https://catalog.oae.go.th/dataset/f99fa2a2-0db0-4a00-b141-0ec3b01c4a1a" target="_blank" rel="noopener">สศก. — สถานการณ์สินค้าเกษตรที่สำคัญ (ต้นทุน ราคา ผลตอบแทนต่อตัน 2565–2567)</a> · <a href="https://catalog.oae.go.th/dataset/eb9e456c-875a-44ab-ad03-0ef5804d0d80" target="_blank" rel="noopener">ภาวะเศรษฐกิจครัวเรือนเกษตร</a></li>
+    <li><a href="https://data.go.th/dataset/spatial-rain" target="_blank" rel="noopener">สสน. — ฝนเชิงพื้นที่รายจังหวัด (IDW) ทั้งประเทศ และค่าปกติ 30 ปี</a> · CC BY-NC · <a href="https://tiservice.hii.or.th/forecast/projects/bot/Observed/Temperature/" target="_blank" rel="noopener">อุณหภูมิรายจังหวัด</a></li>
+    <li><a href="https://open-meteo.com/en/docs/historical-weather-api" target="_blank" rel="noopener">ERA5 reanalysis (Copernicus) ผ่าน Open-Meteo</a> — ฝนและอุณหภูมิรายวันที่จุดศูนย์กลาง 77 จังหวัด พ.ศ. 2550–2562 (ทดแทนข้อมูลสถานีกรมอุตุฯ ที่ต้องลงทะเบียน)</li>
+    <li><a href="http://gis.rid.go.th/" target="_blank" rel="noopener">กรมชลประทาน — ขอบเขตโครงการชลประทานขนาดใหญ่และกลาง (WFS, 599 โครงการ)</a></li>
+    <li><a href="https://catalog.nso.go.th/" target="_blank" rel="noopener">สสช. — สำมะโนการเกษตร: ผู้ถือครอง เนื้อที่ถือครอง เครื่องจักร ปุ๋ย</a></li>
+    <li><a href="https://catalog.doae.go.th/" target="_blank" rel="noopener">กรมส่งเสริมการเกษตร — พื้นที่ประสบภัยในเขต/นอกเขตชลประทาน รายตำบล</a></li>
+    <li><a href="https://catalog.disaster.go.th/en/dataset/dpm-gd027" target="_blank" rel="noopener">ปภ. — สถิติอุทกภัย</a> และ <a href="https://catalog.disaster.go.th/en/dataset/dpm-gd028" target="_blank" rel="noopener">ภัยแล้ง</a> ปี 2562</li>
+    <li><a href="https://lddcatalog.ldd.go.th/en/dataset/lpd" target="_blank" rel="noopener">กรมพัฒนาที่ดิน — เขตความเหมาะสมของที่ดิน (Agri-Map Zoning)</a> · CC BY-ND</li>
+    <li><a href="https://github.com/chingchai/OpenGISData-Thailand" target="_blank" rel="noopener">OpenGISData-Thailand</a> — ขอบเขตและรหัสจังหวัด</li>
+  </ul>
+  <p class="empty-note">ทุกตัวเลขคำนวณจากไฟล์ที่ดาวน์โหลดจริงเมื่อ 23–25 ต.ค. 2569 ช่องที่ไม่มีข้อมูลแสดงว่า “ไม่มีข้อมูล” ไม่ใช่ 0 · ผลผลิตต่อไร่ถ่วงน้ำหนัก = ผลผลิตรวม × 1,000 ÷ เนื้อที่เก็บเกี่ยวรวม</p>
+</dialog>

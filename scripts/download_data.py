@@ -140,6 +140,12 @@ def tmd_cache(manifest: list) -> None:
         dest = RAW.parent / "cache" / f"tmd_{svc.split('/')[0].lower()}_{TODAY.replace('-', '')}.json"
         entry = fetch(f"{sources.TMD_BASE}/{svc}/", dest, params={"uid": uid, "ukey": ukey, "format": "json"})
         entry["dataset"] = "D09"
+        try:
+            body = (ROOT / entry["file"].replace("\\", "/")).read_text(encoding="utf-8", errors="ignore")[:200] if entry.get("file") else ""
+        except OSError:
+            body = ""
+        if "Authentication fail" in body:
+            entry["status"] = "error: TMD Authentication fail (check uid/ukey or wait for account approval)"
         manifest.append(entry)
         print(f"  D09 {svc}: {entry['status']}")
 
@@ -175,7 +181,15 @@ def main(argv=None) -> int:
         download_era5("1970-01-01", "2025-12-31", "1970_2025", manifest)
 
     RAW.mkdir(parents=True, exist_ok=True)
-    (RAW / "manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=1), encoding="utf-8")
+    mpath = RAW / "manifest.json"
+    if args.only and mpath.exists():  # partial run: keep entries of datasets that were not re-downloaded
+        try:
+            old = json.loads(mpath.read_text(encoding="utf-8"))
+            done = {m.get("file") for m in manifest}
+            manifest = [m for m in old if m.get("file") not in done] + manifest
+        except (ValueError, OSError):
+            pass
+    mpath.write_text(json.dumps(manifest, ensure_ascii=False, indent=1), encoding="utf-8")
 
     print("\nManual downloads still needed:")
     for ds in sources.DATASETS:

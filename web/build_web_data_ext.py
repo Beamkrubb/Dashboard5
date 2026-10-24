@@ -96,3 +96,37 @@ print('tempHII', {k: len(v) for k, v in tempHII.items()}, '| holders', len(holde
 print('household years', list(hh), '| cost crops', len(cost['crops']), '| soil', list(soil))
 nat = sum(v[0] for v in irr.values()); print('irrigation rai', f'{nat:,}', 'sample', {provs[k]: v for k, v in list(irr.items())[:3]})
 print('mech sample', {provs[k]: v for k, v in list(mech.items())[:3]}, 'doae sample', {provs[k]: v for k, v in list(doae.items())[:3]})
+
+# 8. ERA5 (Open-Meteo archive) monthly per province centroid 2550-2562 -> complete 77-province climate series
+import os as _os
+ep = '/mnt/user-data/uploads/Dashboard5/data/interim/era5_monthly_2550_2562.json'
+if _os.path.exists(ep):
+    em = json.load(open(ep)); eRain, eSeason, eT = {}, {}, {}
+    for c, months in em.items():
+        pi = code_idx.get(int(c))
+        if pi is None: continue
+        by = {}
+        for k, v in months.items():
+            by.setdefault(k[:4], {})[int(k[5:])] = v
+        for y, mm in by.items():
+            if len(mm) != 12: continue
+            eRain.setdefault(y, {})[pi] = r(sum(v[0] for v in mm.values()))
+            eSeason.setdefault(y, {})[pi] = r(sum(mm[m][0] for m in range(5, 11)))
+            eT.setdefault(y, {})[pi] = [r(sum(v[1] for v in mm.values()) / 12, 2), r(max(v[2] for v in mm.values()), 1), r(min(v[3] for v in mm.values()), 1)]
+    eM = {}
+    for c, months in em.items():
+        pi = code_idx.get(int(c))
+        if pi is None: continue
+        for k, v in months.items():
+            e = eM.setdefault(pi, {}).setdefault(k[:4], [[None] * 12, [None] * 12])
+            e[0][int(k[5:]) - 1] = round(v[0]); e[1][int(k[5:]) - 1] = round(v[1], 1) if v[1] is not None else None
+    d.update(eraRain=eRain, eraSeason=eSeason, eraT=eT, eraM=eM)
+    s = json.dumps(d, ensure_ascii=False, separators=(',', ':')); open('data3.json', 'w').write(s)
+    import statistics as st
+    for y in ('2561', '2562'):
+        h = d['rain'].get(y, {}); common = [k for k in h if int(k) in eRain[y] or k in eRain[y]]
+        xs = [h[k] for k in h if int(k) in eRain[y]]; ys = [eRain[y][int(k)] for k in h if int(k) in eRain[y]]
+        n = len(xs); mx, my = sum(xs) / n, sum(ys) / n
+        cov = sum((a - mx) * (b - my) for a, b in zip(xs, ys)); r_ = cov / (sum((a - mx) ** 2 for a in xs) * sum((b - my) ** 2 for b in ys)) ** .5
+        print('ERA5 vs HII rain', y, 'n', n, 'mean HII', round(mx), 'mean ERA5', round(my), 'r', round(r_, 2))
+    print('ERA5 years', sorted(eRain), {y: len(v) for y, v in eT.items()}, f'{len(s)/1e6:.2f} MB')
